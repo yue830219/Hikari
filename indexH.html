@@ -1,0 +1,1989 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>銷售紀錄系統</title>
+<link rel="icon" href="Hikari.png" type="image/png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh-tw.js"></script>
+
+<style>
+    html { 
+    overflow-y: scroll; 
+    }
+    /* 全局奶茶色系美化 */
+    body { font-family: 'Segoe UI', Arial, 微軟正黑體, sans-serif; background-color: #FAF5F0; padding: 20px; color: #5C4E43; margin: 0; }
+    h1 { color: #8C6B52; text-align: center; margin-bottom: 30px; font-weight: 700; letter-spacing: 1px; }
+    h2 { font-size: 24px; }
+    h3 { font-size: 20px; }
+    h2, h3 { color: #A68064; margin-top: 20px; border-left: 4px solid #D4B895; padding-left: 10px; }
+    
+    /* 主容器 */
+    .container { max-width: 80%; margin: 20px auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 30px rgba(212, 184, 149, 0.3); }
+    
+    /* 頁籤美化 */
+    .tabs { display: flex; gap: 8px; border-bottom: 2px solid #EBE3DB; margin-bottom: 25px; padding-bottom: 5px; flex-wrap: wrap; }
+    .tab { padding: 12px 24px; cursor: pointer; border: none; background: none; font-size: 16px; font-weight: bold; color: #998675; border-radius: 8px; transition: all 0.3s; }
+    .tab:hover { background-color: #FAF5F0; color: #8C6B52; }
+    .tab.active { color: white; background-color: #D4B895; box-shadow: 0 4px 10px rgba(212, 184, 149, 0.3); }
+    
+    /* 關鍵切換控制：分頁內容隱藏與顯示 */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    /* 表單與輸入欄位美化 */
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 8px; font-weight: bold; color: #6B5A4E; font-size: 16px; } 
+    input[type="text"], input[type="number"], input[type="date"], select { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #DDCBC0; border-radius: 10px; transition: all 0.2s; color: #5C4E43; background-color: #FFFFFF; font-size: 16px; } 
+    input::placeholder { font-size: 16px; color: #BFAEA4; } 
+    input:focus, select:focus { outline: none; border-color: #D4B895; box-shadow: 0 0 0 3px rgba(212, 184, 149, 0.2); }
+    
+    /* 隱藏數字輸入框的上下按鈕 (針對指定 class) */
+    input[type="number"].no-spinners::-webkit-outer-spin-button,
+    input[type="number"].no-spinners::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type="number"].no-spinners {
+        -moz-appearance: textfield;
+    }
+
+    /* 複選框群組樣式 */
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
+    .checkbox-group label { display: flex; align-items: center; background-color: #FAF5F0; padding: 8px 14px; border-radius: 20px; font-weight: normal; font-size: 16px; cursor: pointer; color: #998675; transition: all 0.2s; border: 1px solid #EBE3DB; margin-bottom: 0; }
+    .checkbox-group label:hover { background-color: #EBE3DB; color: #8C6B52; }
+    .checkbox-group input[type="checkbox"] { margin-right: 6px; width: 16px; height: 16px; accent-color: #D4B895; cursor: pointer; }
+    
+    /* 按鈕樣式系列 */
+    button { background-color: #D4B895; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; box-shadow: 0 3px 6px rgba(212, 184, 149, 0.2); }
+    button:hover { background-color: #C4A484; transform: translateY(-1px); box-shadow: 0 5px 12px rgba(212, 184, 149, 0.3); }
+    button:active { transform: translateY(0); }
+    
+    .btn-warning { background-color: #E3D0B9; color: #8C6B52; }
+    .btn-warning:hover { background-color: #D4C1A8; color: #A68064; box-shadow: 0 5px 12px rgba(227, 208, 185, 0.4); }
+    .btn-danger { background-color: #D98A82; transition: all 0.3s ease; }
+    .btn-danger:hover { background-color: #C9736A; box-shadow: 0 5px 12px rgba(217, 138, 130, 0.4); }
+    .btn-secondary { background-color: #e5e0e1; color: #6b5c5d; }
+    .btn-secondary:hover { background-color: #d6cfd0; box-shadow: 0 5px 12px rgba(0,0,0,0.1); }
+    .btn-info { background-color: #D0C3B6; color: #fff; }
+    .btn-info:hover { background-color: #BFAFA0; box-shadow: 0 5px 12px rgba(208, 195, 182, 0.4); }
+    
+    /* 橫向月份排列標籤 */
+    .month-tags-container { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+    .month-tag { padding: 10px 20px; background-color: #FAF5F0; border: 1px solid #EBE3DB; border-radius: 20px; cursor: pointer; font-weight: 600; color: #998675; transition: all 0.2s; }
+    .month-tag:hover { background-color: #EBE3DB; color: #8C6B52; }
+    .month-tag.active { background-color: #D4B895; color: white; border-color: #D4B895; box-shadow: 0 3px 8px rgba(212, 184, 149, 0.3); }
+    
+    /* 表格美化 */
+    table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(212, 184, 149, 0.15); border: 1px solid #EBE3DB; }
+    th, td { padding: 14px 12px; text-align: left; border-bottom: 1px solid #EBE3DB; vertical-align: middle; }
+    th { background-color: #EBE3DB; color: #8C6B52; font-weight: 600; font-size: 15px; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background-color: #FFFFFF; }
+    .action-cell { 
+        /* 移除 flex，保留原生 td 的特性，高度才會隨左側列表自動撐開 */
+        vertical-align: middle; 
+        white-space: normal; /* 允許按鈕自動換行 */
+    }
+
+    .action-cell button { 
+        padding: 8px 12px; 
+        font-size: 13px; 
+        margin: 3px 2px; /* 使用 margin 替代原本 flex 的 gap 效果 */
+        display: inline-block; /* 確保按鈕排版正常 */
+    }
+    
+    .flex-row { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 12px; flex-wrap: wrap; }
+    .flex-row > div { flex: 1; min-width: 150px; }
+    .total-display { font-size: 24px; font-weight: bold; color: #8C6B52; text-align: right; background: #FAF5F0; padding: 15px; border-radius: 10px; border: 1px dashed #D4B895; }
+
+    .readonly-block { background: #FFFFFF; padding: 12px 15px; border-radius: 8px; border: 1px dashed #DDCBC0; display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 12px; }
+    .readonly-block > div { flex: 1; }
+    .readonly-block label { color: #8C6B52; font-size: 15px; margin-bottom: 4px; }
+    .readonly-block span { font-weight: bold; color: #5C4E43; font-size: 15px; }
+
+    /* 小視窗 Modal 樣式 */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+    .modal-overlay.active { display: flex; }
+    .modal-content { background: white; padding: 30px; border-radius: 16px; width: 90%; max-width: 550px; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #EBE3DB; padding-bottom: 15px; margin-bottom: 20px; }
+    .modal-header h3 { margin: 0; padding: 0; border: none; color: #8C6B52; }
+    .close-btn { background: none; border: none; font-size: 28px; color: #998675; cursor: pointer; padding: 0; box-shadow: none; line-height: 1; }
+    .close-btn:hover { color: #8C6B52; background: none; transform: none; box-shadow: none; }
+    .detail-row { margin-bottom: 15px; }
+    .detail-row label { color: #8C6B52; font-size: 15px; margin-bottom: 6px; display: block; }
+    .detail-row .detail-data { background: #FAF5F0; padding: 12px; border-radius: 8px; color: #5C4E43; font-size: 15px; line-height: 1.6; }
+
+    .sorting-active tr { cursor: move !important; background-color: #FFFFFF; border: 1px dashed #E3D0B9; }
+    .sorting-active tr:hover td { background-color: #F5EDE6 !important; }
+    tr.dragging { opacity: 0.5; background-color: #E8D5C8 !important; border: 2px dashed #D98A82 !important; }
+
+    /* --- 日曆模組 (Flatpickr) 美化 --- */
+    .flatpickr-calendar { font-family: 'Segoe UI', Arial, 微軟正黑體, sans-serif !important; border: none !important; box-shadow: 0 8px 30px rgba(212, 184, 149, 0.4) !important; border-radius: 12px !important; padding-bottom: 8px; }
+    .flatpickr-months .flatpickr-month { background-color: #D4B895 !important; color: white !important; fill: white !important; border-radius: 12px 12px 0 0 !important; height: 50px !important; }
+    .flatpickr-current-month .flatpickr-monthDropdown-months { background-color: #D4B895 !important; font-weight: 600 !important; outline: none; }
+    .flatpickr-current-month input.cur-year { font-weight: 600 !important; }
+    .flatpickr-weekdays { background-color: #D4B895 !important; height: 30px !important; }
+    span.flatpickr-weekday { color: white !important; font-weight: bold !important; }
+    .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange { background: #8C6B52 !important; border-color: #8C6B52 !important; }
+    .flatpickr-day:hover { background: #EBE3DB !important; border-color: #EBE3DB !important; color: #8C6B52 !important; }
+    .flatpickr-months .flatpickr-prev-month:hover svg, .flatpickr-months .flatpickr-next-month:hover svg { fill: #FAF5F0 !important; }
+
+    /* 顧客問卷卡片 */
+    .survey-card { background: #FFFFFF; border: 2px solid #DDCBC0; border-radius: 20px; padding: 35px; margin-top: 10px; box-shadow: 0 10px 30px rgba(212, 184, 149, 0.25); }
+    .survey-header { text-align: center; margin-bottom: 30px; }
+    .survey-header h2 { border-left: none !important; padding-left: 0 !important; color: #8C6B52; margin-bottom: 10px; font-weight: bold; }
+    .survey-header p { color: #998675; font-size: 14px; margin: 0; line-height: 1.6; }
+    .survey-section { background: #FCF9F7; padding: 25px; border-radius: 14px; margin-bottom: 25px; border: 1px solid #EBE3DB; }
+    .survey-section-title { font-size: 20px; font-weight: bold; color: #A68064; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #DDCBC0; padding-bottom: 8px; }
+    .survey-checkbox-group { display: flex; flex-wrap: wrap; gap: 12px; }
+    .survey-checkbox-group label { display: flex; align-items: center; background-color: white; padding: 10px 18px; border-radius: 25px; font-weight: 500; font-size: 16px; cursor: pointer; color: #5C4E43; transition: all 0.25s; border: 1.5px solid #EBE3DB; margin-bottom: 0 !important; user-select: none; }
+    .survey-checkbox-group label:hover { background-color: #FAF5F0; border-color: #D4B895; color: #8C6B52; }
+    .survey-checkbox-group input[type="checkbox"] { margin-right: 8px; width: 18px; height: 18px; accent-color: #D4B895; cursor: pointer; }
+    .survey-checkbox-group label:has(input:checked) { background-color: #D4B895; color: white; border-color: #D4B895; box-shadow: 0 4px 10px rgba(212, 184, 149, 0.3); }
+
+    /* 報表列印專屬樣式 */
+    @media print {
+        body * { visibility: hidden; }
+        #report-print-modal, #report-print-modal * { visibility: visible; }
+        #report-print-modal { position: absolute; left: 0; top: 0; width: 100%; max-width: 100%; box-shadow: none; margin: 0; padding: 0; background: white; }
+        .hide-on-print { display: none !important; }
+        
+        /* 修改這裡：加入縮小比例與寬度補償 */
+        .modal-content { max-height: none; overflow: visible; transform: scale(1); transform-origin: top left; width: 117%; }
+        .modal-overlay { position: absolute; background: none; align-items: flex-start; padding: 0; }
+        /* 強制表格邊框在列印時顯示更清晰 */
+        table { border: 1px solid #ddd; }
+        /* 修改這裡：加入 white-space: nowrap 讓文字不換行 */
+        th, td { border-bottom: 1px solid #ddd; white-space: nowrap; }
+    }
+
+    /* --- 登入畫面與帳號管理美化 --- */
+        .login-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #FAF5F0; z-index: 2000; 
+            display: flex; justify-content: center; align-items: center; 
+        }
+        .login-box { 
+            background: white; padding: 40px; border-radius: 16px; 
+            box-shadow: 0 10px 40px rgba(212, 184, 149, 0.3); 
+            width: 90%; max-width: 400px; text-align: center; 
+        }
+        .settings-btn { 
+            position: absolute; top: 20px; right: 20px; 
+            background: none; border: none; font-size: 26px; 
+            cursor: pointer; color: #8C6B52; transition: transform 0.3s; 
+            box-shadow: none; padding: 0; line-height: 1;
+        }
+        .settings-btn:hover { 
+            transform: rotate(90deg); background: none; box-shadow: none;
+        }
+        /* 確保 container 可以容納絕對定位的按鈕 */
+        .container { position: relative; }
+        
+        /* 停用/無法修改的欄位呈現灰色樣式 */
+        input:disabled, select:disabled {
+            background-color: #EEEEEE !important;
+            color: #A0A0A0 !important;
+            border-color: #DDD3CB !important;
+            cursor: not-allowed;
+        }
+</style>
+</head>
+<body>
+
+<!-- 登入畫面 Overlay -->
+<div class="login-overlay" id="login-overlay">
+    <div class="login-box">
+        <h2 style="color: #8C6B52; border:none; margin-top:0;">☕ 系統登入</h2>
+        <div class="form-group" style="text-align: left; margin-top: 20px;">
+            <label>帳號</label>
+            <input type="text" id="login-username" placeholder="請輸入帳號" required>
+        </div>
+        <div class="form-group" style="text-align: left;">
+            <label>密碼</label>
+            <input type="password" id="login-password" placeholder="請輸入密碼" style="width: 100%; padding: 12px; border: 1px solid #DDCBC0; border-radius: 10px; box-sizing: border-box;" required>
+        </div>
+        <button onclick="handleLogin()" style="width:100%; margin-top:20px; font-size: 16px; padding: 14px;">登入系統</button>
+    </div>
+</div>
+
+<div class="container">
+    <!-- 右上角齒輪按鈕 -->
+    <button class="settings-btn hide-on-print" onclick="openAccountModal()">⚙️</button>
+    <h1 class="hide-on-print">銷售紀錄管理系統</h1>
+    <div class="tabs hide-on-print">
+        <button class="tab active" onclick="switchTab('sales-tab', this)">銷售輸入</button>
+        <button class="tab" onclick="switchTab('records-tab', this)">銷售紀錄</button>
+        <button class="tab" onclick="switchTab('expenses-tab', this)">支出管理</button>
+        <button class="tab" onclick="switchTab('reports-tab', this)">報表統計</button>
+        <button class="tab" onclick="switchTab('clients-tab', this)">客戶管理</button>
+        <button class="tab" onclick="switchTab('products-tab', this)">產品管理</button>
+        <button class="tab" onclick="switchTab('survey-tab', this)">會員建立</button>
+    </div>
+
+    <div id="sales-tab" class="tab-content active hide-on-print">
+        <h2 id="sale-form-title">新增銷售紀錄</h2>
+        <div class="flex-row">
+            <div style="flex: 0 0 130px; min-width: 130px;"><label>日期</label><input type="text" id="sale-date" class="date-picker" placeholder="請選擇日期..." readonly required></div>
+            <div><label>手機號碼</label><input type="text" id="sale-phone" oninput="findClientByPhone()" placeholder="例如：0912345678"></div>
+            <div><label>客戶名稱</label><select id="sale-client" onchange="checkMemberStatus()"></select></div>
+        </div>
+
+        <div id="sale-client-info" style="display: none;">
+            <div class="readonly-block" style="margin-bottom: 5px;">
+                <div><label>會員狀態</label><span id="sale-member-text" style="color: #e67e22;"></span></div>
+                <div><label>性別</label><span id="sale-gender-text" style="color: #5C4E43;"></span></div>
+                <div><label>生日</label><span id="sale-birthday-text"></span></div>
+                <div><label>職業</label><span id="sale-occupation-text"></span></div>
+            </div>
+            <div class="readonly-block" style="margin-bottom: 20px;">
+                <div><label>地址</label><span id="sale-address-text"></span></div>
+                <div><label>剩餘免費課程數</label><span id="sale-free-classes-text" style="color: #A68064; font-weight: bold;">0 堂</span></div>
+                <div><label>儲值金餘額</label><span id="sale-balance-text" style="color: #8C6B52; font-weight: bold;">$0</span></div>
+            </div>
+        </div>
+        
+        <div id="sale-items-container" style="margin-bottom: 15px; margin-top: 10px;">
+            <h3 style="color: #A68064;">銷售課程</h3>
+            <table>
+                <thead><tr><th>課程名稱</th><th style="width: 110px;">贈送課程</th><th style="width: 120px;">單價明細</th><th style="width: 100px;">數量</th><th style="width: 120px;">銷售金額</th><th style="width: 80px; text-align: center;">操作</th></tr></thead>
+                <tbody id="sale-course-items-body"></tbody>
+            </table>
+            <button onclick="addSaleItemRow('課程')" class="btn-warning" style="margin-top: 10px; margin-bottom: 25px;">+ 新增課程</button>
+
+            <h3 style="color: #A68064;">銷售商品</h3>
+            <table>
+                <thead><tr><th>產品名稱</th><th style="width: 120px;">單價明細</th><th style="width: 100px;">數量</th><th style="width: 120px;">銷售金額</th><th style="width: 80px; text-align: center;">操作</th></tr></thead>
+                <tbody id="sale-product-items-body"></tbody>
+            </table>
+            <button onclick="addSaleItemRow('商品')" class="btn-warning" style="margin-top: 10px; margin-bottom: 20px;">+ 新增商品</button>
+        </div>
+
+        <!-- 新增支付大標題 -->
+        <h3 style="color: #A68064; margin-top: 25px; border-top: 2px dashed #EBE3DB; padding-top: 20px;">💳 支付與折抵</h3>
+
+        <!-- 額外折扣與儲值折抵 -->
+        <div class="flex-row" style="margin-bottom: 10px;">
+            <div><label>額外折扣</label><input type="number" id="sale-discount" class="no-spinners" value="0" min="0" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value==='') this.value='0'; calculateTotal();" oninput="this.value = this.value.replace(/[^0-9]/g, ''); calculateTotal();"></div>
+            <div>
+                <label>使用儲值金折抵 (最高可抵 <span id="max-offset-display" style="color:#8C6B52; font-weight:bold;">$0</span>)</label>
+                <input type="number" id="sale-use-balance" class="no-spinners" value="0" min="0" 
+                       onfocus="if(this.value==='0') this.value='';" 
+                       onblur="if(this.value==='') this.value='0'; calculateTotal();" 
+                       oninput="this.value = this.value.replace(/[^0-9]/g, ''); let max = parseInt(this.max) || 0; if (max === 0) this.value = '0'; calculateTotal(this);">
+            </div>
+        </div>
+
+        <!-- 付款方式與手續費 -->
+        <div class="flex-row" style="margin-bottom: 15px; background: #FFFFFF; padding: 15px; border-radius: 8px; border: 1px dashed #DDCBC0;">
+            <div>
+                <label>💵 現金付款</label>
+                <input type="number" id="sale-pay-cash" class="no-spinners" value="0" min="0" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value==='') this.value='0'; calculateTotal();" oninput="this.value = this.value.replace(/[^0-9]/g, ''); calculateTotal(this);">
+            </div>
+            <div>
+                <label>🏦 匯款轉帳</label>
+                <input type="number" id="sale-pay-transfer" class="no-spinners" value="0" min="0" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value==='') this.value='0'; calculateTotal();" oninput="this.value = this.value.replace(/[^0-9]/g, ''); calculateTotal(this);">
+            </div>
+            <div>
+                <label>📱 Line Pay</label>
+                <input type="number" id="sale-pay-line" class="no-spinners" value="0" min="0" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value==='') this.value='0'; calculateTotal();" oninput="this.value = this.value.replace(/[^0-9]/g, ''); calculateTotal(this);">
+            </div>
+        </div>
+        <div class="flex-row" id="line-pay-fee-container" style="display: none; margin-bottom: 15px; background: #FAF5F0; padding: 15px; border-radius: 8px;">
+            <div>
+                <label>Line Pay 手續費率 (%)</label>
+                <input type="number" id="sale-line-pay-rate" value="2.13" step="0.01" oninput="calculateTotal()">
+            </div>
+            <div>
+                <label>衍生手續費 (店內吸收)</label>
+                <input type="text" id="sale-fee-amount" readonly style="background-color: transparent; color: #e74c3c; font-weight: bold; border: none;">
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label>備註</label>
+            <input type="text" id="sale-note" placeholder="可輸入此筆銷售的備註說明">
+        </div>
+
+        <!-- 結帳金額顯示區塊 -->
+        <div class="form-group" style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 15px; flex-wrap: wrap;">
+            <div class="total-display" style="font-size: 18px; padding: 12px; border-style: dotted; background: #FFFFFF;">應收總計: <span id="sale-total">0</span> 元</div>
+            <!-- 加入 ID 與預設隱藏 display:none -->
+            <div id="remaining-pay-container" class="total-display" style="font-size: 18px; padding: 12px; background: #FFF4E6; border: 1px dashed #E67E22; color: #D35400; display: none;">剩餘應收: <span id="sale-remaining-pay">0</span> 元</div>
+            <div class="total-display" style="font-size: 22px; padding: 12px; background: #FAF5F0;">實收金額: <span id="sale-actual-pay">0</span> 元</div>
+        </div>
+        <button id="sale-submit-btn" onclick="saveSale()">儲存</button>
+        <button id="sale-cancel-btn" onclick="cancelSaleEdit()" class="btn-secondary" style="display: none; margin-left: 8px;">取消修改</button>
+    </div>
+
+    <div id="records-tab" class="tab-content hide-on-print">
+        <h2>查看銷售紀錄</h2>
+        <label>選擇查看月份：</label><div id="month-list" class="month-tags-container"></div>
+        <table style="table-layout: fixed; width: 100%;">
+            <thead><tr><th style="width: 8%;">日期</th><th style="width: 5%;">客戶</th><th style="width: 23%;">課程</th><th style="width: 18%;">產品</th><th style="width: 5%;">折扣</th><th style="width: 15%;">總計與付款明細</th><th style="width: 10%;">操作</th></tr></thead>
+            <tbody id="records-table-body"></tbody>
+        </table>
+    </div>
+
+    <div id="expenses-tab" class="tab-content hide-on-print">
+        <h2 id="expense-form-title">新增支出紀錄</h2>
+        <div class="flex-row">
+            <div style="flex: 0 0 130px; min-width: 130px;"><label>日期</label><input type="text" id="expense-date" class="date-picker" placeholder="請選擇日期..." readonly required></div>
+            <div>
+                <label>支出類別</label>
+                <select id="expense-category">
+                    <option value="進貨成本">📦 進貨成本</option><option value="店面租金">🏠 店面租金</option><option value="水電瓦斯">💧 水電瓦斯</option><option value="薪資費用">👤 薪資費用</option>
+                    <option value="行銷廣告">📢 行銷廣告</option><option value="設備保養">🔧 設備保養</option><option value="耗材雜支">🛒 耗材雜支</option><option value="其他支出">📝 其他支出</option>
+                </select>
+            </div>
+            <div><label>金額</label><input type="number" id="expense-amount" class="no-spinners" min="0" placeholder="請輸入金額"></div>
+            <div><label>備註</label><input type="text" id="expense-note" placeholder="可輸入費用細項"></div>
+        </div>
+        <button id="expense-submit-btn" onclick="saveExpense()">新增支出</button><button id="expense-cancel-btn" onclick="cancelExpenseEdit()" class="btn-secondary" style="display: none; margin-left: 5px;">取消修改</button>
+
+        <h3 style="margin-top: 30px;">支出紀錄</h3>
+        <label>選擇查看月份：</label><div id="expense-month-list" class="month-tags-container"></div>
+        <table style="table-layout: fixed; width: 100%;">
+            <thead><tr><th style="width: 15%;">日期</th><th style="width: 15%;">類別</th><th style="width: 15%;">金額</th><th style="width: 40%;">備註</th><th style="width: 15%;">操作</th></tr></thead>
+            <tbody id="expenses-table-body"></tbody>
+        </table>
+    </div>
+
+    <div id="reports-tab" class="tab-content hide-on-print">
+        <h2>每月收支總表</h2>
+        <label>選擇查看月份：</label><div id="report-month-list" class="month-tags-container"></div>
+        <div class="flex-row" style="margin-top: 25px; gap: 20px;">
+            <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px;"><label style="font-size: 16px; margin-bottom: 10px;">總收入 (實收)</label><span id="report-income" style="color: #2ecc71; font-size: 32px;">$0</span></div>
+            <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px;"><label style="font-size: 16px; margin-bottom: 10px;">店面支出</label><span id="report-expense" style="color: #e74c3c; font-size: 32px;">$0</span></div>
+            <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px;"><label style="font-size: 16px; margin-bottom: 10px;">Line Pay 手續費</label><span id="report-line-fee" style="color: #e67e22; font-size: 32px;">$0</span></div>
+            <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px; background-color: #FAF5F0; border-color: #D4B895; border-width: 2px;"><label style="font-size: 16px; margin-bottom: 10px;">本月淨利潤</label><span id="report-profit" style="color: #8C6B52; font-size: 36px; font-weight: 900;">$0</span></div>
+        </div>
+
+        <h3 style="margin-top: 40px; margin-bottom: 15px;">📑 產生詳細銷售報表</h3>
+        <div class="flex-row" style="background: #FFFFFF; padding: 20px; border-radius: 12px; border: 1px dashed #DDCBC0;">
+            <div>
+                <label>選擇指定日期 (日結報表)</label>
+                <input type="text" id="report-daily-date" class="date-picker" placeholder="請選擇日期..." readonly>
+            </div>
+            <div>
+                <button onclick="generateDailyReport()" class="btn-info" style="margin-top: 26px;">產生當日報表</button>
+            </div>
+            <div style="flex: 2; text-align: right;">
+                <label>&nbsp;</label>
+                <button onclick="generateMonthlyReport()" class="btn-warning" style="margin-top: 26px;">產生當月報表</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="clients-tab" class="tab-content hide-on-print">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"><h2 style="margin: 0; border-left: 4px solid #D4B895; padding-left: 10px;">客戶管理名冊</h2><button id="client-sort-btn" class="btn-secondary" onclick="toggleClientSort()">排序</button></div>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="min-width: 70px; white-space: nowrap;">名稱</th>
+                        <th style="min-width: 50px; white-space: nowrap;">性別</th>
+                        <th style="min-width: 50px; white-space: nowrap;">會員</th>
+                        <th style="min-width: 50px; white-space: nowrap;">儲值餘額</th>
+                        <th style="min-width: 90px; white-space: nowrap;">生日</th>
+                        <th style="min-width: 60px; white-space: nowrap;">職業</th>
+                        <th style="min-width: 60px; white-space: nowrap;">手機</th>
+                        <th style="min-width: 100px; white-space: nowrap;">剩餘免費課程數</th>
+                        <th style="min-width: 200px; white-space: nowrap;">操作</th>
+                    </tr>
+                </thead><tbody id="clients-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="products-tab" class="tab-content hide-on-print">
+        <h2>新增產品</h2>
+        <div class="flex-row">
+            <div><label>類別</label><select id="product-category"><option value="課程">課程</option><option value="商品" selected>商品</option></select></div>
+            <div style="flex: 3;"><label>產品名稱</label><input type="text" id="product-name"></div>
+        </div>
+        <div class="flex-row">
+            <div><label>定價</label><input type="number" id="product-price" class="no-spinners"></div>
+            <div><label>會員價</label><input type="number" id="product-member-price" class="no-spinners"></div>
+            <div><label>非會員加購價</label><input type="number" id="product-non-member-addon-price" class="no-spinners" placeholder="若無請留空"></div>
+            <div><label>會員加購價</label><input type="number" id="product-member-addon-price" class="no-spinners" placeholder="若無請留空"></div>
+        </div>
+        <button id="product-submit-btn" onclick="saveProductForm()">新增產品</button><button id="product-cancel-btn" onclick="cancelProductEdit()" class="btn-secondary" style="display: none; margin-left: 5px;">取消修改</button>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px;"><h3>產品列表</h3><button id="product-sort-btn" class="btn-secondary" onclick="toggleProductSort()">排序</button></div>
+        <div style="overflow-x: auto;">
+            <table style="min-width: 900px;"> <!-- 設定最小寬度強制撐開欄位 -->
+                <thead>
+                    <tr>
+                        <th style="width: 8%;">代號</th>
+                        <th style="width: 22%;">產品名稱</th>
+                        <th style="width: 8%;">類別</th>
+                        <th style="width: 12%;">定價</th>
+                        <th style="width: 12%;">會員價</th>
+                        <th style="width: 14%;">非會員加購價</th>
+                        <th style="width: 14%;">會員加購價</th>
+                        <th style="min-width: 120px; width: 10%;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="products-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="survey-tab" class="tab-content hide-on-print">
+        <div class="survey-card">
+            <div class="survey-header"><h2>會員資料卡 </h2><p>謝謝你/妳將肌膚交給我們照顧<br>願你/妳這裡不只變漂亮，也能慢慢找回自己喜歡的樣子。</p></div>
+            <div class="survey-section">
+                <div class="survey-section-title">👤 1. 基本資料</div>
+                <div class="flex-row">
+                    <div><label>您的姓名 <span style="color: #D98A82;">*</span></label><input type="text" id="client-name" placeholder="請輸入姓名"></div>
+                    <div>
+                        <label>性別</label>
+                        <select id="client-gender">
+                            <option value="未提供">請選擇</option>
+                            <option value="女">女</option>
+                            <option value="男">男</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div><label>生日</label><input type="text" id="client-birthday" class="date-picker" placeholder="請選擇生日" readonly></div>
+                    <div><label>職業</label><input type="text" id="client-occupation" placeholder="例如：教師、工程師、自由業"></div>
+                </div>
+            </div>
+            <div class="survey-section">
+                <div class="survey-section-title">📞 2. 聯絡方式與會員</div>
+                <div class="flex-row">
+                    <div><label>手機號碼</label><input type="text" id="client-phone" placeholder="例如：0912345678"></div>
+                    <div style="flex: 2;"><label>聯絡地址</label><input type="text" id="client-address" placeholder="請輸入您的通訊地址"></div>
+                    <!-- 1. 儲值金餘額：加入 disabled -->
+                    <div><label id="client-balance-label">儲值金餘額</label><input type="number" id="client-balance" class="no-spinners" value="0" min="0" disabled></div>                </div>
+                <!-- 2. 會員狀態辦理：加入 disabled -->
+                <div class="form-group" style="margin-top: 15px;"><label>會員</label><select id="client-is-member" disabled><option value="false">一般</option><option value="true">👑 尊榮會員</option></select></div>
+                <!-- 3. 新增欄位：贈送課程數，預設 disabled -->
+                <div class="form-group" style="margin-top: 15px;"><label>贈送課程數</label><input type="number" id="client-free-classes" class="no-spinners" value="0" min="0" disabled></div>
+            </div>
+            <div class="survey-section">
+                <div class="survey-section-title">🩹 3. 膚質狀況與日常習慣</div>
+                <div class="form-group"><label>過敏史</label><input type="text" id="client-allergy" placeholder="請輸入敏感因子，例如：酒精、特定香精（若無請填「無」）"></div>
+                <div class="form-group" style="margin-top: 20px;">
+                    <label style="margin-bottom: 12px;">肌膚狀況 (可複選)</label>
+                    <div class="survey-checkbox-group" id="client-skin-conditions">
+                        <label><input type="checkbox" value="乾燥缺水"><span>乾燥缺水</span></label><label><input type="checkbox" value="容易出油"><span>容易出油</span></label><label><input type="checkbox" value="毛孔粗大"><span>毛孔粗大</span></label><label><input type="checkbox" value="粉刺痘痘"><span>粉刺痘痘</span></label>
+                        <label><input type="checkbox" value="敏感泛紅"><span>敏感泛紅</span></label><label><input type="checkbox" value="膚色暗沉"><span>膚色暗沉</span></label><label><input type="checkbox" value="細紋初老"><span>細紋初老</span></label><label><input type="checkbox" value="肌膚不穩定"><span>肌膚不穩定</span></label>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 25px;">
+                    <label style="margin-bottom: 12px;">生活習慣 (可複選)</label>
+                    <div class="survey-checkbox-group" id="client-lifestyle">
+                        <label><input type="checkbox" value="經常熬夜"><span>經常熬夜</span></label><label><input type="checkbox" value="作息不固定"><span>作息不固定</span></label><label><input type="checkbox" value="壓力偏大"><span>壓力偏大</span></label><label><input type="checkbox" value="長時間上妝"><span>長時間上妝</span></label>
+                        <label><input type="checkbox" value="飲食偏重口味"><span>飲食偏重口味</span></label><label><input type="checkbox" value="飲水量不足"><span>飲水量不足</span></label><label><input type="checkbox" value="經常待冷氣房"><span>經常待冷氣房</span></label><label><input type="checkbox" value="長時間使用3C產品"><span>長時間使用3C產品</span></label>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 30px;"><button id="client-submit-btn" onclick="saveClientForm()" style="font-size: 16px; padding: 14px 40px; border-radius: 30px;">✨ 提交表單</button><button id="client-cancel-btn" onclick="cancelClientEdit()" class="btn-secondary" style="display: none; margin-left: 15px; font-size: 16px; padding: 14px 30px; border-radius: 30px;">放棄修改</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 客戶詳細資料 Modal -->
+<div class="modal-overlay hide-on-print" id="client-modal" onclick="closeModalOnBg(event, 'client-modal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>☕ 客戶詳細資料</h3>
+            <button class="close-btn" onclick="closeModal('client-modal')">&times;</button>
+        </div>
+        
+        <!-- 第一行：客戶名稱、性別、會員狀態 -->
+        <div class="flex-row detail-row" style="margin-bottom: 0;">
+            <div><label>客戶名稱</label><div class="detail-data" id="detail-name"></div></div>
+            <div><label>性別</label><div class="detail-data" id="detail-gender"></div></div>
+            <div><label>會員狀態</label><div class="detail-data" id="detail-member"></div></div>
+        </div>
+
+        <!-- 第二行：生日、職業、手機 -->
+        <div class="flex-row detail-row" style="margin-bottom: 0;">
+            <div><label>生日</label><div class="detail-data" id="detail-birthday"></div></div>
+            <div><label>職業</label><div class="detail-data" id="detail-occupation"></div></div>
+            <div><label>手機</label><div class="detail-data" id="detail-phone"></div></div>
+        </div>
+
+        <!-- 第三行：儲值金餘額、剩餘免費課程數 -->
+        <div class="flex-row detail-row" style="margin-bottom: 0;">
+            <div><label>儲值金餘額</label><div class="detail-data" id="detail-balance" style="color:#8C6B52; font-weight:bold;"></div></div>
+            <div><label>剩餘免費課程數</label><div class="detail-data" id="detail-free-classes"></div></div>
+        </div>
+
+        <!-- 第四行之後都不變 -->
+        <div class="detail-row"><label>地址</label><div class="detail-data" id="detail-address"></div></div>
+        <div class="detail-row"><label>過敏史</label><div class="detail-data" id="detail-allergy"></div></div>
+        <div class="detail-row"><label>肌膚狀況</label><div class="detail-data" id="detail-skin"></div></div>
+        <div class="detail-row"><label>生活習慣</label><div class="detail-data" id="detail-lifestyle"></div></div>
+    </div>
+</div>
+
+<!-- 多重儲值 Modal -->
+<div class="modal-overlay hide-on-print" id="deposit-modal" onclick="closeModalOnBg(event, 'deposit-modal')">
+    <div class="modal-content">
+        <div class="modal-header"><h3>💰 客戶儲值</h3><button class="close-btn" onclick="closeModal('deposit-modal')">&times;</button></div>
+        <div class="form-group"><label style="font-size: 18px;">儲值客戶：<span id="deposit-client-name" style="color: #8C6B52; font-weight: bold;"></span></label></div>
+        <div class="flex-row">
+            <div><label>💵 現金</label><input type="number" id="deposit-cash" class="no-spinners" value="0" min="0" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value==='') this.value='0';"></div>
+            <div><label>🏦 匯款轉帳</label><input type="number" id="deposit-transfer" class="no-spinners" value="0" min="0" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value==='') this.value='0';"></div>
+            <div><label>📱 Line Pay</label><input type="number" id="deposit-line" class="no-spinners" value="0" min="0" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value==='') this.value='0';"></div>
+        </div>
+        <button onclick="confirmDeposit()" style="width: 100%; margin-top: 25px; padding: 14px; font-size: 16px;">確認儲值</button>
+    </div>
+</div>
+
+<!-- 統計報表與列印 Modal -->
+<div class="modal-overlay" id="report-print-modal" onclick="closeModalOnBg(event, 'report-print-modal')">
+    <div class="modal-content" style="max-width: 900px; width: 95%;">
+        <div class="modal-header hide-on-print">
+            <h3 style="font-size: 24px;">📊 銷售統計分析報表</h3>
+            <button class="close-btn" onclick="closeModal('report-print-modal')">&times;</button>
+        </div>
+        <div id="report-print-body" style="background: white; padding: 10px;"></div>
+        <div style="text-align: center; margin-top: 30px; border-top: 2px dashed #EBE3DB; padding-top: 20px;" class="hide-on-print">
+            <button onclick="window.print()" style="font-size: 16px; padding: 14px 40px; border-radius: 30px;">🖨️ 列印 / 儲存為 PDF</button>
+            <button class="btn-secondary" onclick="closeModal('report-print-modal')" style="font-size: 16px; padding: 14px 40px; border-radius: 30px; margin-left: 10px;">關閉視窗</button>
+        </div>
+    </div>
+</div>
+
+<!-- 自訂系統提示 Modal -->
+<div class="modal-overlay hide-on-print" id="custom-alert-modal" onclick="closeModalOnBg(event, 'custom-alert-modal')" style="z-index: 3000;">
+    <div class="modal-content" style="max-width: 400px; text-align: center; padding: 30px 20px;">
+        <div style="margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #8C6B52; border-left: none; padding-left: 0; font-size: 24px;">🔔 系統提示</h3>
+        </div>
+        <!-- 加入 white-space: pre-wrap 讓 \n 能夠正常換行 -->
+        <div id="custom-alert-message" style="font-size: 16px; color: #5C4E43; margin-bottom: 25px; line-height: 1.6; white-space: pre-wrap;"></div>
+        <button onclick="closeModal('custom-alert-modal')" style="width: 100%; padding: 12px; font-size: 16px; border-radius: 30px;">我知道了</button>
+    </div>
+</div>
+
+<!-- 帳號管理 Modal -->
+<div class="modal-overlay hide-on-print" id="account-modal" onclick="closeModalOnBg(event, 'account-modal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>⚙️ 系統設定</h3>
+            <button class="close-btn" onclick="closeModal('account-modal')">&times;</button>
+        </div>
+        
+        <!-- 最高權限專屬區域 (新增/修改帳號密碼) -->
+        <div id="admin-only-section">
+            <div class="flex-row">
+                <div>
+                    <label>使用者帳號</label>
+                    <input type="text" id="acc-username" placeholder="輸入帳號名稱">
+                </div>
+                <div>
+                    <label>用戶名稱</label>
+                    <input type="text" id="acc-displayname" placeholder="輸入用戶名稱">
+                </div>
+                <div>
+                    <label>登入密碼</label>
+                    <input type="text" id="acc-password" placeholder="輸入密碼">
+                </div>
+            </div>
+            <div style="margin-top: 15px; margin-bottom: 25px;">
+                <button id="acc-submit-btn" onclick="saveAccount()">新增帳號</button>
+                <button id="acc-cancel-btn" onclick="cancelAccountEdit()" class="btn-secondary" style="display: none; margin-left: 8px;">取消修改</button>
+            </div>
+            
+            <table style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">帳號</th>
+                        <th style="width: 30%;">名稱</th>
+                        <th style="width: 20%;">密碼</th>
+                        <th style="width: 20%; text-align: center;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="account-table-body"></tbody>
+            </table>
+        </div>
+
+        <!-- 登出按鈕 (所有權限皆可見) -->
+        <div style="margin-top: 20px; text-align: center; border-top: 2px dashed #EBE3DB; padding-top: 20px;">
+            <button class="btn-danger" onclick="handleLogout()" style="width: 100%; padding: 14px; font-size: 16px;">登出系統</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbycS8EGR_vC5eONH6kr2vT0LbYii6awKB-W644-aK-YX08WIlFXOHfwEd1CresAxnj5ww/exec";
+
+    // --- 帳號登入與管理系統 ---
+    let systemUsers = [];
+    try { 
+        systemUsers = JSON.parse(localStorage.getItem('systemUsers')) || []; 
+    } catch(e) { systemUsers = []; }
+    
+    // 1. 初始化預設帳號 (加入 user 帳號)
+    if (systemUsers.length === 0) {
+        systemUsers = [
+            { username: 'admin', displayname: '管理員', password: 'admin' },
+            { username: 'user', displayname: '一般建檔員', password: 'user' }
+        ];
+        localStorage.setItem('systemUsers', JSON.stringify(systemUsers));
+    } else {
+        // 若系統已初始化過但沒有 user 帳號，則自動補上
+        if (!systemUsers.find(u => u.username === 'user')) {
+            systemUsers.push({ username: 'user', displayname: '一般建檔員', password: 'user' });
+            localStorage.setItem('systemUsers', JSON.stringify(systemUsers));
+        }
+    }
+
+    // 2. 登入邏輯與登出系統
+    let currentUser = null; // 儲存當前登入者資訊
+
+    function handleLogin() {
+        const unInput = document.getElementById('login-username').value.trim();
+        const un = unInput.toLowerCase(); // 🌟 將輸入的帳號轉小寫 (不區分大小寫)
+        const pw = document.getElementById('login-password').value.trim();
+        
+        // 🌟 為了在 GAS 載入前就能登入，合併 systemUsers (本地預設) 與 users (雲端) 進行比對
+        const allPossibleUsers = [...systemUsers, ...users]; 
+        
+        // 🌟 尋找帳號：將陣列裡的 username 也轉小寫來比對，密碼則維持區分大小寫
+        const user = allPossibleUsers.find(u => (u.username || '').toLowerCase() === un && String(u.password) === pw);
+        
+        if (user) {
+            currentUser = user;
+            localStorage.setItem('currentUser', JSON.stringify(user)); 
+            
+            document.getElementById('login-overlay').style.display = 'none';
+            
+            // 💡 順便修復了原本程式碼中 `dn` 變數未定義的問題
+            showCustomAlert(`✨ 登入成功！歡迎 ${user.displayname || user.name || user.username} 用戶。`);
+            
+            // 清空輸入框
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+
+            applyUserPermissions(); // 套用介面權限
+        } else {
+            showCustomAlert('❌ 帳號或密碼錯誤，請重新輸入！');
+        }
+    }
+
+    // 新增：登出邏輯
+    function handleLogout() {
+        localStorage.removeItem('currentUser'); // 清除本機登入紀錄
+        location.reload(); // 重新整理網頁，恢復為未登入狀態
+    }
+
+    // 新增：依據權限渲染 UI 介面
+    function applyUserPermissions() {
+        if (!currentUser) return;
+        
+        const allTabs = document.querySelectorAll('.tabs .tab');
+        const settingsBtn = document.querySelector('.settings-btn');
+        
+        // 所有人都可以看到右上角的齒輪
+        if (settingsBtn) settingsBtn.style.display = 'block';
+
+        if (currentUser.username === 'user') {
+            // 一般建檔員 (user) 限制只能看到會員建立
+            allTabs.forEach(tab => {
+                if (tab.getAttribute('onclick').includes('survey-tab')) {
+                    tab.style.display = 'inline-block';
+                    switchTab('survey-tab', tab); // 強制切換
+                } else {
+                    tab.style.display = 'none';
+                }
+            });
+        } else {
+            // 最高權限 (admin 等) 可見所有功能
+            allTabs.forEach(tab => {
+                tab.style.display = 'inline-block';
+            });
+            switchTab('sales-tab', document.querySelector('.tabs .tab[onclick*="sales-tab"]'));
+        }
+    }
+
+    // 監聽登入畫面按下 Enter 鍵
+    document.getElementById('login-overlay').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            handleLogin();
+        }
+    });
+
+    // --- 帳號管理小視窗邏輯 ---
+    let editingUserIndex = -1;
+    
+    function openAccountModal() {
+        // 如果是最高權限 (admin)，顯示帳號新增與修改區塊，並渲染表格
+        if (currentUser && currentUser.username === 'admin') {
+            document.getElementById('admin-only-section').style.display = 'block';
+            renderAccounts();
+        } else {
+            // 其餘帳號隱藏該區塊，只保留 Modal 下方的登出按鈕
+            document.getElementById('admin-only-section').style.display = 'none';
+        }
+        document.getElementById('account-modal').classList.add('active');
+    }
+
+    function renderAccounts() {
+        const tbody = document.getElementById('account-table-body');
+        tbody.innerHTML = '';
+        systemUsers.forEach((u, index) => {
+            const isHighestAdmin = (u.username === 'admin');
+            const isGeneralUser = (u.username === 'user'); // 新增：判斷是否為一般建檔員
+            
+            // 根據不同身分給予不同的刪除按鈕狀態
+            let deleteBtn = '';
+            if (isHighestAdmin) {
+                deleteBtn = `<button class="btn-secondary" style="opacity:0.5; cursor:not-allowed;" title="最高權限無法刪除">刪除</button>`;
+            } else if (isGeneralUser) {
+                deleteBtn = `<button class="btn-secondary" style="opacity:0.5; cursor:not-allowed;" title="一般建檔員無法刪除">刪除</button>`;
+            } else {
+                deleteBtn = `<button class="btn-danger" onclick="deleteAccount(${index}, this)">刪除</button>`;
+            }
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${u.username}</strong> ${isHighestAdmin ? '<span style="color:#D98A82; font-size:12px;">(最高權限)</span>' : ''}</td>
+                    <td>${u.displayname || '未設定'}</td>
+                    <td>${u.password}</td>
+                    <td class="action-cell" style="text-align: center;">
+                        <button class="btn-warning" onclick="startEditAccount(${index})">修改</button>
+                        ${deleteBtn}
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function startEditAccount(index) {
+        editingUserIndex = index;
+        const u = systemUsers[index];
+        document.getElementById('acc-username').value = u.username;
+        document.getElementById('acc-displayname').value = u.displayname || '';
+        document.getElementById('acc-password').value = u.password;
+        
+        // 鎖定 admin 帳號名稱不可修改
+        if (u.username === 'admin') {
+            document.getElementById('acc-username').disabled = true;
+            document.getElementById('acc-username').style.backgroundColor = '#f0f0f0';
+        } else {
+            document.getElementById('acc-username').disabled = false;
+            document.getElementById('acc-username').style.backgroundColor = '#FFFFFF';
+        }
+
+        document.getElementById('acc-submit-btn').textContent = '儲存修改';
+        document.getElementById('acc-cancel-btn').style.display = 'inline-block';
+    }
+
+    function cancelAccountEdit() {
+        editingUserIndex = -1;
+        document.getElementById('acc-username').value = '';
+        document.getElementById('acc-displayname').value = '';
+        document.getElementById('acc-password').value = '';
+        document.getElementById('acc-username').disabled = false;
+        document.getElementById('acc-username').style.backgroundColor = '#FFFFFF';
+        document.getElementById('acc-submit-btn').textContent = '新增帳號';
+        document.getElementById('acc-cancel-btn').style.display = 'none';
+    }
+
+    function saveAccount() {
+        const un = document.getElementById('acc-username').value.trim();
+        const dn = document.getElementById('acc-displayname').value.trim();
+        const pw = document.getElementById('acc-password').value.trim();
+        
+        if (!un || !pw || !dn) return showCustomAlert('⚠️ 帳號、名稱與密碼欄位皆不可為空！');
+
+        // 🌟 新增：限制帳號與密碼只能輸入英數字 (大小寫英文 + 數字)
+        const alphanumericRegex = /^[a-zA-Z0-9]+$/;
+        if (!alphanumericRegex.test(un)) return showCustomAlert('⚠️ 帳號只能包含英文與數字，不可使用特殊符號或中文！');
+        if (!alphanumericRegex.test(pw)) return showCustomAlert('⚠️ 密碼只能包含英文與數字，不可使用特殊符號或中文！');
+
+        const unLower = un.toLowerCase(); // 🌟 將輸入的帳號轉為小寫，用來檢查重複
+
+        if (editingUserIndex === -1) {
+            // 💡【新增帳號】
+            // 🌟 檢查重複時轉小寫比對，確保不會發生 Admin 與 admin 共存的情況
+            if (systemUsers.find(u => (u.username || '').toLowerCase() === unLower)) return showCustomAlert('⚠️ 該帳號名稱已存在，請更換一個。');
+            
+            // 建立完整的新物件 (包含 id)
+            const newUser = { 
+                id: 'usr-' + Date.now(), // 給予一組獨立 ID 讓 GAS 能辨識
+                username: un,            // 存入陣列時保留使用者輸入的大小寫外觀
+                name: dn,         
+                displayname: dn,  
+                password: pw,
+                role: 'staff',           // 預設給予一般權限
+                status: '啟用'
+            };
+            
+            systemUsers.push(newUser);
+            syncWithGoogle('insert', 'users', newUser); // 🚀 呼叫 GAS：新增至雲端
+            showCustomAlert('✨ 帳號新增成功！');
+            
+        } else {
+            // 💡【修改帳號】
+            const checkExist = systemUsers.find((u, i) => (u.username || '').toLowerCase() === unLower && i !== editingUserIndex);
+            if (checkExist) return showCustomAlert('⚠️ 該帳號名稱已存在，請更換一個。');
+            
+            // 更新本地陣列資料
+            systemUsers[editingUserIndex].username = un;
+            systemUsers[editingUserIndex].name = dn;        
+            systemUsers[editingUserIndex].displayname = dn; 
+            systemUsers[editingUserIndex].password = pw;
+            
+            syncWithGoogle('update', 'users', systemUsers[editingUserIndex]); // 🚀 呼叫 GAS：更新雲端資料
+            showCustomAlert('✨ 帳號修改成功！');
+        }
+
+        localStorage.setItem('systemUsers', JSON.stringify(systemUsers));
+        cancelAccountEdit();
+        renderAccounts();
+    }
+
+    function deleteAccount(index, btn) {
+        if (systemUsers[index].username === 'admin') return showCustomAlert('⚠️ 最高權限帳號 (admin) 無法刪除！');
+        if (systemUsers[index].username === 'user') return showCustomAlert('⚠️ 一般建檔員帳號 (user) 無法刪除！');
+
+        if (!btn.dataset.confirmed) {
+            btn.textContent = "確定?";
+            btn.style.backgroundColor = "#d32f2f";
+            btn.dataset.confirmed = "true";
+            setTimeout(() => {
+                if (btn && btn.dataset.confirmed) {
+                    btn.textContent = "刪除";
+                    btn.style.backgroundColor = "";
+                    delete btn.dataset.confirmed;
+                }
+            }, 3000);
+        } else {
+            // 💡 先把要刪除的使用者抓出來，以取得它的 id
+            const userToDelete = systemUsers[index]; 
+            syncWithGoogle('delete', 'users', { id: userToDelete.id }); // 🚀 呼叫 GAS：從雲端刪除
+            
+            systemUsers.splice(index, 1); // 刪除本地陣列資料
+            localStorage.setItem('systemUsers', JSON.stringify(systemUsers));
+            if (editingUserIndex === index) cancelAccountEdit();
+            renderAccounts();
+            showCustomAlert('🗑️ 帳號已刪除！');
+        }
+    }
+
+    // 觸發自訂提示視窗的函數
+    function showCustomAlert(message) {
+        document.getElementById('custom-alert-message').textContent = message;
+        document.getElementById('custom-alert-modal').classList.add('active');
+    }
+
+    function generateId(prefix) { return prefix + '_' + Date.now().toString() + '_' + Math.random().toString(36).substr(2, 5); }
+
+    function syncWithGoogle(action, dataType, record) {
+        if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("請在此貼上")) return;
+        const payload = { action: action, dataType: dataType, data: record };
+        fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(err => console.error("Google 同步失敗:", err));
+    }
+
+    let datePickers = flatpickr(".date-picker", { locale: "zh_tw", dateFormat: "Y-m-d", disableMobile: "true" });
+    document.getElementById('sale-date')._flatpickr.setDate(new Date());
+    document.getElementById('expense-date')._flatpickr.setDate(new Date());
+    document.getElementById('report-daily-date')._flatpickr.setDate(new Date());
+
+    let clients = [], products = [], sales = [], expenses = [];
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+
+    try { clients = JSON.parse(localStorage.getItem('clients')) || []; if(!Array.isArray(clients)) clients = []; } catch(e) { clients = []; }
+    try { products = JSON.parse(localStorage.getItem('products')) || []; if(!Array.isArray(products)) products = []; } catch(e) { products = []; }
+    try { sales = JSON.parse(localStorage.getItem('sales')) || []; if(!Array.isArray(sales)) sales = []; } catch(e) { sales = []; }
+    try { expenses = JSON.parse(localStorage.getItem('expenses')) || []; if(!Array.isArray(expenses)) expenses = []; } catch(e) { expenses = []; }
+
+    let dataModified = false;
+    clients.forEach(c => { if(c && !c.id) { c.id = generateId('cli'); dataModified = true; } if(c && c.balance === undefined) { c.balance = 0; dataModified = true; } });
+    products.forEach(p => { if(p && !p.id) { p.id = generateId('prd'); p.category = p.category || '商品'; p.code = p.code || generateProductCode(p.category); dataModified = true; } if(p && p.memberAddonPrice === undefined) { p.memberAddonPrice = 0; p.nonMemberAddonPrice = 0; dataModified = true; } });
+    sales.forEach(s => { if(s && !s.id) { s.id = generateId('sal'); dataModified = true; } if(s && s.paidByBalance === undefined) { s.paidByBalance = 0; s.paidByActual = s.total || 0; dataModified = true; } if(s && !s.paymentMethod) { s.paymentMethod = '現金'; s.paymentFee = 0; s.paymentFeeRate = 0; dataModified = true; } });
+    expenses.forEach(e => { if(e && !e.id) { e.id = generateId('exp'); dataModified = true; }});
+    if (dataModified) saveData();
+
+    function generateProductCode(category) {
+        const prefix = category === '課程' ? 'A' : 'B'; let maxNum = 0;
+        products.forEach(p => { if (p && p.code && p.code.startsWith(prefix)) { let num = parseInt(p.code.substring(1)); if (!isNaN(num) && num > maxNum) maxNum = num; } });
+        return prefix + String(maxNum + 1).padStart(2, '0');
+    }
+
+    let currentIsMember = false, editingClientIndex = -1, editingSaleIndex = -1, editingProductIndex = -1, editingExpenseIndex = -1;
+    let currentFilterMonth = '', currentExpenseFilterMonth = '', currentReportFilterMonth = '';
+    let isClientSorting = false, isProductSorting = false, dragRow = null;
+
+    function getCheckedValues(containerId) { return Array.from(document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`)).map(cb => cb.value); }
+    function setCheckedValues(containerId, valuesArray) { document.querySelectorAll(`#${containerId} input[type="checkbox"]`).forEach(cb => cb.checked = (valuesArray || []).includes(cb.value)); }
+
+    function closeModal(modalId) { document.getElementById(modalId).classList.remove('active'); }
+    function closeModalOnBg(event, modalId) { if (event.target.id === modalId) closeModal(modalId); }
+
+    function switchTab(tabId, btn) {
+        if (isClientSorting) toggleClientSort(); if (isProductSorting) toggleProductSort();
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        if (btn) btn.classList.add('active');
+        
+        if(tabId === 'sales-tab') updateSaleDropdowns();
+        if(tabId === 'records-tab') { initFilterMonth(); renderMonthButtons(); renderRecords(); }
+        if(tabId === 'expenses-tab') { initExpenseFilterMonth(); renderExpenseMonthButtons(); renderExpenses(); }
+        if(tabId === 'reports-tab') { initReportFilterMonth(); renderReportMonthButtons(); renderReport(); }
+        if(tabId === 'clients-tab') renderClients();
+        if(tabId === 'products-tab') renderProducts();
+    }
+
+    // --- 客戶多重儲值管理 ---
+    let currentDepositClientIndex = -1;
+    function depositClient(index) {
+        currentDepositClientIndex = index;
+        document.getElementById('deposit-client-name').textContent = clients[index].name;
+        document.getElementById('deposit-cash').value = '0';
+        document.getElementById('deposit-transfer').value = '0';
+        document.getElementById('deposit-line').value = '0';
+        document.getElementById('deposit-modal').classList.add('active');
+    }
+
+    function confirmDeposit() {
+        if(currentDepositClientIndex === -1) return;
+        const c = clients[currentDepositClientIndex];
+        const cash = parseInt(document.getElementById('deposit-cash').value) || 0;
+        const transfer = parseInt(document.getElementById('deposit-transfer').value) || 0;
+        const line = parseInt(document.getElementById('deposit-line').value) || 0;
+        const amount = cash + transfer + line;
+
+        if (amount <= 0) return showCustomAlert('請輸入大於0的有效儲值總金額！');
+        
+        c.balance = (c.balance || 0) + amount;
+        let upgradeMsg = "";
+        
+        if (amount >= 3000 && !c.isMember) {
+            c.isMember = true;
+            c.isMemberByDeposit = true;
+            upgradeMsg += `\n🎉 單筆儲值滿 $${amount}，已自動幫客戶升級為 VIP 會員！`;
+        }
+        
+        // --- 新增：儲值滿額贈送課程邏輯 ---
+        let bonusClasses = 0;
+        if (amount >= 10000) {
+            bonusClasses = 2;
+        } else if (amount >= 6000) {
+            bonusClasses = 1;
+        }
+
+        if (bonusClasses > 0) {
+            c.freeClasses = (c.freeClasses || 0) + bonusClasses;
+            upgradeMsg += `\n🎁 贈送 ${bonusClasses} 堂免費課程！(目前共 ${c.freeClasses} 堂)`;
+        }
+        // ---------------------------------
+        
+        let methods = [];
+        if (cash > 0) methods.push('現金');
+        if (transfer > 0) methods.push('匯款');
+        if (line > 0) methods.push('Line Pay');
+        let paymentMethodStr = methods.join(' + ');
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        const depositSaleRecord = {
+            id: generateId('sal'),
+            date: todayStr,
+            clientName: c.name,
+            isMember: c.isMember,
+            items: [{ name: "💰 儲值金儲值", qty: 1, price: amount }],
+            discount: 0,
+            total: amount,
+            paidByBalance: 0,       
+            paidByActual: amount,
+            paymentMethod: paymentMethodStr,
+            paymentFeeRate: 0,
+            paymentFee: 0,
+            paymentBreakdown: { cash, transfer, line }
+        };
+        
+        sales.push(depositSaleRecord);
+        syncWithGoogle('insert', 'sales', depositSaleRecord);
+        
+        saveData(); // 確保您有這個 function，否則請保留您原本儲存的邏輯
+        renderClients();
+        updateSaleDropdowns();
+        syncWithGoogle('update', 'clients', c);
+        closeModal('deposit-modal');
+        showCustomAlert(`✨ 儲值成功！\n客戶：${c.name}\n本次儲值：$${amount}\n目前儲值餘額：$${c.balance}${upgradeMsg}\n\n📝 此儲值已自動建立實收收入紀錄！`);
+    }
+
+    // --- 支出管理 ---
+    function saveExpense() {
+        const date = document.getElementById('expense-date').value, category = document.getElementById('expense-category').value, amount = parseInt(document.getElementById('expense-amount').value), note = document.getElementById('expense-note').value;
+        if (!date || isNaN(amount) || amount <= 0) return showCustomAlert('請確認日期已選擇且金額正確');
+        let targetId = editingExpenseIndex === -1 ? generateId('exp') : expenses[editingExpenseIndex].id || generateId('exp');
+        const expenseData = { id: targetId, date, category, amount, note };
+        if (editingExpenseIndex === -1) { expenses.push(expenseData); syncWithGoogle('insert', 'expenses', expenseData); } else { expenses[editingExpenseIndex] = expenseData; syncWithGoogle('update', 'expenses', expenseData); cancelExpenseEdit(); }
+        saveData(); renderExpenseMonthButtons(); renderExpenses(); clearExpenseForm();
+    }
+    function startEditExpense(index) {
+        editingExpenseIndex = index; const e = expenses[index]; document.getElementById('expense-date')._flatpickr.setDate(e.date); document.getElementById('expense-category').value = e.category; document.getElementById('expense-amount').value = e.amount; document.getElementById('expense-note').value = e.note || ''; document.getElementById('expense-form-title').textContent = '📝 修改支出紀錄'; document.getElementById('expense-submit-btn').textContent = '儲存修改'; document.getElementById('expense-cancel-btn').style.display = 'inline-block'; window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function cancelExpenseEdit() { editingExpenseIndex = -1; document.getElementById('expense-form-title').textContent = '新增支出紀錄'; document.getElementById('expense-submit-btn').textContent = '新增支出'; document.getElementById('expense-cancel-btn').style.display = 'none'; clearExpenseForm(); }
+    function clearExpenseForm() { document.getElementById('expense-date')._flatpickr.setDate(new Date()); document.getElementById('expense-category').selectedIndex = 0; document.getElementById('expense-amount').value = ''; document.getElementById('expense-note').value = ''; }
+    function deleteExpense(index, btn) {
+        if (!btn.dataset.confirmed) { btn.textContent = "確定"; btn.style.backgroundColor = "#d32f2f"; btn.dataset.confirmed = "true"; setTimeout(() => { if (btn && btn.dataset.confirmed) { btn.textContent = "刪除"; btn.style.backgroundColor = ""; delete btn.dataset.confirmed; } }, 3000); } 
+        else { const targetId = expenses[index].id; expenses.splice(index, 1); if (targetId) syncWithGoogle('delete', 'expenses', { id: targetId }); if (editingExpenseIndex === index) cancelExpenseEdit(); saveData(); renderExpenseMonthButtons(); renderExpenses(); }
+    }
+    function initExpenseFilterMonth() { if (!currentExpenseFilterMonth) { const now = new Date(); currentExpenseFilterMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'); } }
+    function renderExpenseMonthButtons() {
+        initExpenseFilterMonth(); const container = document.getElementById('expense-month-list'); if(!container) return; container.innerHTML = ''; let monthsSet = new Set(); expenses.forEach(e => { if(e && e.date) monthsSet.add(e.date.substring(0, 7)); }); monthsSet.add(currentExpenseFilterMonth); Array.from(monthsSet).sort().reverse().forEach(m => { container.innerHTML += `<button class="month-tag ${m === currentExpenseFilterMonth ? 'active' : ''}" onclick="changeExpenseFilterMonth('${m}')">${m}</button>`; });
+    }
+    function changeExpenseFilterMonth(monthStr) { currentExpenseFilterMonth = monthStr; renderExpenseMonthButtons(); renderExpenses(); }
+    function renderExpenses() {
+        const tbody = document.getElementById('expenses-table-body'); if(!tbody) return; tbody.innerHTML = ''; const filteredExpenses = expenses.map((e, index) => ({ ...e, originalIndex: index })).filter(e => e && e.date && e.date.startsWith(currentExpenseFilterMonth)).sort((a, b) => b.date.localeCompare(a.date) || b.originalIndex - a.originalIndex); filteredExpenses.forEach(e => { if(e) tbody.innerHTML += `<tr><td>${e.date}</td><td><strong>${e.category}</strong></td><td style="color:#e74c3c; font-weight:bold;">$${e.amount}</td><td>${e.note || '-'}</td><td class="action-cell"><button class="btn-warning" onclick="startEditExpense(${e.originalIndex})">修改</button><button class="btn-danger" onclick="deleteExpense(${e.originalIndex}, this)">刪除</button></td></tr>`; });
+        if(filteredExpenses.length === 0) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999; padding: 30px;">此月份目前尚無支出紀錄</td></tr>';
+    }
+
+    // --- 產品管理 ---
+    function saveProductForm() {
+        const category = document.getElementById('product-category').value, name = document.getElementById('product-name').value.trim(); const priceInput = document.getElementById('product-price').value.trim(), memberPriceInput = document.getElementById('product-member-price').value.trim(); const nonMemAddonInput = document.getElementById('product-non-member-addon-price').value.trim(); const memAddonInput = document.getElementById('product-member-addon-price').value.trim();
+        if (name === "" || priceInput === "") return showCustomAlert('請輸入產品名稱與定價！'); const price = parseInt(priceInput), memberPrice = memberPriceInput === "" ? 0 : parseInt(memberPriceInput); const nonMemberAddonPrice = nonMemAddonInput === "" ? 0 : parseInt(nonMemAddonInput); const memberAddonPrice = memAddonInput === "" ? 0 : parseInt(memAddonInput);
+        if (isNaN(price) || price < 0) return showCustomAlert('請輸入有效的定價金額！');
+        if (editingProductIndex === -1) { const code = generateProductCode(category); const prodData = { id: generateId('prd'), code, category, name, price, memberPrice, nonMemberAddonPrice, memberAddonPrice }; products.push(prodData); syncWithGoogle('insert', 'products', prodData); } else { let oldProd = products[editingProductIndex]; let newCode = oldProd.category !== category ? generateProductCode(category) : oldProd.code; const targetId = oldProd.id || generateId('prd'); const prodData = { id: targetId, code: newCode, category, name, price, memberPrice, nonMemberAddonPrice, memberAddonPrice }; products[editingProductIndex] = prodData; syncWithGoogle('update', 'products', prodData); cancelProductEdit(); }
+        saveData(); renderProducts(); updateSaleDropdowns(); clearProductForm(); showCustomAlert('產品已成功儲存！');
+    }
+    function startEditProduct(index) {
+        if (isProductSorting) toggleProductSort(); editingProductIndex = index; const p = products[index]; document.getElementById('product-category').value = p.category || '商品'; document.getElementById('product-name').value = p.name; document.getElementById('product-price').value = p.price; document.getElementById('product-member-price').value = p.memberPrice; document.getElementById('product-non-member-addon-price').value = p.nonMemberAddonPrice || ''; document.getElementById('product-member-addon-price').value = p.memberAddonPrice || ''; document.getElementById('product-submit-btn').textContent = '儲存修改'; document.getElementById('product-cancel-btn').style.display = 'inline-block';
+    }
+    function cancelProductEdit() { editingProductIndex = -1; document.getElementById('product-submit-btn').textContent = '新增產品'; document.getElementById('product-cancel-btn').style.display = 'none'; clearProductForm(); }
+    function clearProductForm() { document.getElementById('product-category').value = '商品'; document.getElementById('product-name').value = ''; document.getElementById('product-price').value = ''; document.getElementById('product-member-price').value = ''; document.getElementById('product-non-member-addon-price').value = ''; document.getElementById('product-member-addon-price').value = ''; }
+    function deleteProduct(index, btn) {
+        if (isProductSorting) toggleProductSort(); if (!btn.dataset.confirmed) { btn.textContent = "確定"; btn.style.backgroundColor = "#d32f2f"; btn.dataset.confirmed = "true"; setTimeout(() => { if (btn && btn.dataset.confirmed) { btn.textContent = "刪除"; btn.style.backgroundColor = ""; delete btn.dataset.confirmed; } }, 3000); } else { const targetId = products[index].id; products.splice(index, 1); if (targetId) syncWithGoogle('delete', 'products', { id: targetId }); if (editingProductIndex === index) cancelProductEdit(); saveData(); renderProducts(); updateSaleDropdowns(); }
+    }
+    function renderProducts() { const tbody = document.getElementById('products-table-body'); if(!tbody) return; tbody.innerHTML = ''; products.forEach((p, index) => { if(p) tbody.innerHTML += `<tr data-index="${index}"><td><strong style="color: #8C6B52;">${p.code || '-'}</strong></td><td><strong>${p.name || '未命名'}</strong></td><td>${p.category || '商品'}</td><td>$${p.price || 0}</td><td>${p.memberPrice > 0 ? '$' + p.memberPrice : '-'}</td><td>${p.nonMemberAddonPrice > 0 ? '$' + p.nonMemberAddonPrice : '-'}</td><td>${p.memberAddonPrice > 0 ? '$' + p.memberAddonPrice : '-'}</td><td class="action-cell"><button class="btn-warning" onclick="startEditProduct(${index})">修改</button><button class="btn-danger" onclick="deleteProduct(${index}, this)">刪除</button></td></tr>`; }); }
+    function toggleProductSort() { 
+        products.sort((a, b) => { 
+            const codeA = a.code || '', codeB = b.code || '', prefixA = codeA.charAt(0), prefixB = codeB.charAt(0); 
+            return prefixA !== prefixB ? prefixA.localeCompare(prefixB) : parseInt(codeA.substring(1)) - parseInt(codeB.substring(1)); 
+        }); 
+        
+        saveData(); 
+        
+        // ▼ 這是新增的程式碼：把自動排序好的完整 products 陣列傳給後端 ▼
+        syncWithGoogle('reorder', 'products', products);
+        // ▲ 新增結束 ▲
+        
+        renderProducts(); 
+        updateSaleDropdowns(); 
+        showCustomAlert('產品已按照課程與商品類別自動排序完成！'); 
+    }
+    // --- 報表管理 ---
+    function initReportFilterMonth() { if (!currentReportFilterMonth) { const now = new Date(); currentReportFilterMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'); } }
+    function renderReportMonthButtons() {
+        initReportFilterMonth(); const container = document.getElementById('report-month-list'); if(!container) return; container.innerHTML = ''; let monthsSet = new Set(); sales.forEach(s => { if(s && s.date) monthsSet.add(s.date.substring(0, 7)); }); expenses.forEach(e => { if(e && e.date) monthsSet.add(e.date.substring(0, 7)); }); monthsSet.add(currentReportFilterMonth); Array.from(monthsSet).sort().reverse().forEach(m => { container.innerHTML += `<button class="month-tag ${m === currentReportFilterMonth ? 'active' : ''}" onclick="changeReportFilterMonth('${m}')">${m}</button>`; });
+    }
+    function changeReportFilterMonth(monthStr) { currentReportFilterMonth = monthStr; renderReportMonthButtons(); renderReport(); }
+    
+    function renderReport() {
+        let totalIncome = 0, totalExpense = 0, totalLineFee = 0;
+        sales.forEach(s => { if(s && s.date && s.date.startsWith(currentReportFilterMonth)) { totalIncome += (s.paidByActual !== undefined ? s.paidByActual : (s.total || 0)); if (s.paymentFee) totalLineFee += s.paymentFee; } });
+        expenses.forEach(e => { if(e && e.date && e.date.startsWith(currentReportFilterMonth)) totalExpense += e.amount || 0; });
+        document.getElementById('report-income').textContent = '$' + totalIncome.toLocaleString(); document.getElementById('report-expense').textContent = '$' + totalExpense.toLocaleString(); document.getElementById('report-line-fee').textContent = '$' + totalLineFee.toLocaleString();
+        document.getElementById('report-profit').textContent = '$' + (totalIncome - totalExpense - totalLineFee).toLocaleString();
+    }
+
+    function buildDetailedReport(title, saleFilterFn, expenseFilterFn) {
+        // --- 1. 處理銷售紀錄 ---
+        let filteredSales = sales.filter(saleFilterFn).sort((a, b) => b.date.localeCompare(a.date));
+        let totalActual = 0, totalCash = 0, totalLinePay = 0, totalRemittance = 0, totalFee = 0;
+        let tableRows = '';
+
+        filteredSales.forEach(s => {
+            let actual = s.paidByActual || 0;
+            let fee = s.paymentFee || 0;
+            totalActual += actual; totalFee += fee;
+            
+            if (s.paymentBreakdown) {
+                totalCash += s.paymentBreakdown.cash || 0;
+                totalRemittance += s.paymentBreakdown.transfer || 0;
+                totalLinePay += s.paymentBreakdown.line || 0;
+            } else {
+                let method = s.paymentMethod || '現金';
+                if (method.includes('Line Pay')) totalLinePay += actual;
+                else if (method.includes('匯款')) totalRemittance += actual;
+                else totalCash += actual;
+            }
+
+            let itemsText = s.items.map(i => `${i.name} (x${i.qty})`).join('<br>');
+            tableRows += `<tr><td style="text-align: center;">${s.date}</td><td style="font-weight: bold;">${s.clientName}</td><td>${itemsText}</td><td style="color: #2ecc71; font-weight: bold; text-align: right;">$${actual.toLocaleString()}</td><td style="text-align: center;">${s.paymentMethod || '現金'}</td><td style="color: #e74c3c; text-align: right;">${fee > 0 ? '-$'+fee : '-'}</td></tr>`;
+        });
+
+        // --- 2. 處理支出紀錄 ---
+        let filteredExpenses = expenses.filter(expenseFilterFn).sort((a, b) => b.date.localeCompare(a.date));
+        let totalExpense = 0;
+        let expenseTableRows = '';
+
+        filteredExpenses.forEach(e => {
+            let amount = e.amount || 0;
+            totalExpense += amount;
+            expenseTableRows += `<tr><td style="text-align: center;">${e.date}</td><td style="font-weight: bold;">${e.category}</td><td>${e.note || '-'}</td><td style="color: #e74c3c; font-weight: bold; text-align: right;">$${amount.toLocaleString()}</td></tr>`;
+        });
+
+        // --- 3. 計算淨利 ---
+        let netProfit = totalActual - totalExpense;
+
+        // --- 4. 產出報表 HTML ---
+        let html = `
+            <div style="padding: 20px;">
+                <h2 style="text-align:center; color:#8C6B52; margin-bottom: 30px; font-size: 28px;">${title}</h2>
+                
+                <!-- 收款方式明細 -->
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width:120px; text-align: center; background: #FAF5F0; padding: 15px; border-radius: 12px; border: 1px dashed #D4B895;">
+                        <div style="color: #6B5A4E; font-weight: bold; margin-bottom: 8px;">💵 現金總收</div><div style="font-size: 20px; font-weight: bold;">$${totalCash.toLocaleString()}</div>
+                    </div>
+                    <div style="flex: 1; min-width:120px; text-align: center; background: #FAF5F0; padding: 15px; border-radius: 12px; border: 1px dashed #D4B895;">
+                        <div style="color: #6B5A4E; font-weight: bold; margin-bottom: 8px;">🏦 匯款總收</div><div style="font-size: 20px; font-weight: bold;">$${totalRemittance.toLocaleString()}</div>
+                    </div>
+                    <div style="flex: 1; min-width:120px; text-align: center; background: #FAF5F0; padding: 15px; border-radius: 12px; border: 1px dashed #D4B895;">
+                        <div style="color: #6B5A4E; font-weight: bold; margin-bottom: 8px;">📱 Line Pay總收</div><div style="font-size: 20px; font-weight: bold;">$${totalLinePay.toLocaleString()}</div>
+                    </div>
+                    <div style="flex: 1; min-width:120px; text-align: center; background: #FFFFFF; padding: 15px; border-radius: 12px; border: 1px dashed #DDCBC0;">
+                        <div style="color: #e74c3c; font-weight: bold; margin-bottom: 8px;">扣除手續費</div><div style="font-size: 20px; font-weight: bold; color: #e74c3c;">$${totalFee.toLocaleString()}</div>
+                    </div>
+                </div>
+
+                <!-- 總收支與淨利摘要 -->
+                <div style="display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width:160px; text-align: center; background: #2ecc71; color: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);">
+                        <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">✨ 總實收金額</div><div style="font-size: 24px; font-weight: bold;">$${totalActual.toLocaleString()}</div>
+                    </div>
+                    <div style="flex: 1; min-width:160px; text-align: center; background: #e74c3c; color: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);">
+                        <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">📉 總支出金額</div><div style="font-size: 24px; font-weight: bold;">$${totalExpense.toLocaleString()}</div>
+                    </div>
+                    <div style="flex: 1; min-width:160px; text-align: center; background: #D4B895; color: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(212, 184, 149, 0.3);">
+                        <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">💰 淨利潤 (實收-支出)</div><div style="font-size: 24px; font-weight: bold;">$${netProfit.toLocaleString()}</div>
+                    </div>
+                </div>
+
+                <h3 style="color: #A68064; border-left: 4px solid #D4B895; padding-left: 10px; margin-bottom: 15px;">🧾 詳細銷售紀錄</h3>
+                <table style="width: 100%; border-collapse: collapse; font-size: 15px; margin-bottom: 30px;">
+                    <thead><tr style="background-color: #EBE3DB; color: #8C6B52;"><th style="padding: 12px; text-align: center; width: 15%;">日期</th><th style="padding: 12px; text-align: left; width: 15%;">客戶名稱</th><th style="padding: 12px; text-align: left; width: 30%;">消費內容</th><th style="padding: 12px; text-align: right; width: 15%;">實收金額</th><th style="padding: 12px; text-align: center; width: 15%;">付款方式</th><th style="padding: 12px; text-align: right; width: 10%;">手續費</th></tr></thead>
+                    <tbody>${tableRows || '<tr><td colspan="6" style="text-align:center; padding: 30px; color:#999;">該期間尚無銷售紀錄</td></tr>'}</tbody>
+                </table>
+
+                <h3 style="color: #c0392b; border-left: 4px solid #f5b7b1; padding-left: 10px; margin-bottom: 15px;">💸 詳細支出紀錄</h3>
+                <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
+                    <thead><tr style="background-color: #fdedec; color: #c0392b;"><th style="padding: 12px; text-align: center; width: 15%;">日期</th><th style="padding: 12px; text-align: left; width: 25%;">支出類別</th><th style="padding: 12px; text-align: left; width: 45%;">備註明細</th><th style="padding: 12px; text-align: right; width: 15%;">支出金額</th></tr></thead>
+                    <tbody>${expenseTableRows || '<tr><td colspan="4" style="text-align:center; padding: 30px; color:#999;">該期間尚無支出紀錄</td></tr>'}</tbody>
+                </table>
+            </div>`;
+        document.getElementById('report-print-body').innerHTML = html;
+        document.getElementById('report-print-modal').classList.add('active');
+    }
+
+    function generateDailyReport() { 
+        let d = document.getElementById('report-daily-date').value; 
+        if (!d) return showCustomAlert('請先選擇您要產生報表的日期'); 
+        buildDetailedReport(
+            `📅 ${d} 日結分析報表`, 
+            s => s.date === d,          // 銷售過濾條件
+            e => e.date === d           // 支出過濾條件
+        ); 
+    }
+
+    function generateMonthlyReport() { 
+        if (!currentReportFilterMonth) return showCustomAlert('請先選擇月份'); 
+        buildDetailedReport(
+            `📅 ${currentReportFilterMonth} 月結分析報表`, 
+            s => s.date && s.date.startsWith(currentReportFilterMonth), // 銷售過濾條件
+            e => e.date && e.date.startsWith(currentReportFilterMonth)  // 支出過濾條件
+        ); 
+    }
+
+    // --- 客戶管理 ---
+    function findClientByPhone() {
+        const phoneInput = document.getElementById('sale-phone').value.trim(), clientSelect = document.getElementById('sale-client');
+        if (!phoneInput) return; const foundIndex = clients.findIndex(c => c && c.phone && c.phone.trim() === phoneInput);
+        if (foundIndex !== -1) { clientSelect.value = foundIndex; checkMemberStatus(); }
+    }
+    
+    function clearClientForm() {
+        document.getElementById('client-name').value = '';
+        document.getElementById('client-gender').value = '未提供'; 
+        document.getElementById('client-is-member').value = 'false'; 
+        document.getElementById('client-birthday')._flatpickr.clear(); 
+        document.getElementById('client-occupation').value = ''; 
+        document.getElementById('client-phone').value = ''; 
+        document.getElementById('client-address').value = ''; 
+        document.getElementById('client-allergy').value = '';
+        document.getElementById('client-balance').value = '0'; 
+        document.getElementById('client-free-classes').value = '0'; // 清空贈送課程數
+        document.getElementById('client-balance').disabled = true;
+        document.getElementById('client-is-member').disabled = true;
+        document.getElementById('client-free-classes').disabled = true;
+        document.getElementById('client-balance-label').textContent = '儲值金餘額';
+
+        setCheckedValues('client-skin-conditions', []); 
+        setCheckedValues('client-lifestyle', []);
+    }
+
+    function saveClientForm() {
+        if (isClientSorting) toggleClientSort();
+        const name = document.getElementById('client-name').value;
+        if(!name) return showCustomAlert('客戶名稱為必填，請幫忙填寫喔！');
+        
+        let targetId = editingClientIndex === -1 ? generateId('cli') : clients[editingClientIndex].id || generateId('cli');
+        let newBalance = parseInt(document.getElementById('client-balance').value) || 0; 
+        let newFreeClasses = parseInt(document.getElementById('client-free-classes').value) || 0; // 讀取贈送課程數
+
+        const clientData = {
+            id: targetId, 
+            name: name, 
+            gender: document.getElementById('client-gender').value, 
+            isMember: document.getElementById('client-is-member').value === 'true',
+            // 💡【新增】確保儲存時帶入旗標，如果是編輯模式，保留舊的，如果是新建立，預設 false
+            isMemberByDeposit: (editingClientIndex !== -1) ? (clients[editingClientIndex].isMemberByDeposit || false) : false,
+            balance: newBalance, 
+            freeClasses: newFreeClasses, 
+            birthday: document.getElementById('client-birthday').value, 
+            occupation: document.getElementById('client-occupation').value,
+            phone: document.getElementById('client-phone').value, 
+            address: document.getElementById('client-address').value, 
+            allergy: document.getElementById('client-allergy').value,
+            skinConditions: getCheckedValues('client-skin-conditions'), 
+            lifestyle: getCheckedValues('client-lifestyle')
+        };
+        
+        let wasEditing = (editingClientIndex !== -1);
+        
+        if (!wasEditing) { 
+            clients.push(clientData); 
+            syncWithGoogle('insert', 'clients', clientData); 
+            showCustomAlert('✨ 客戶資料提交成功！非常感謝您的填寫 ☕'); 
+        } else { 
+            clients[editingClientIndex] = clientData; 
+            syncWithGoogle('update', 'clients', clientData); 
+            showCustomAlert('客戶修改資料已儲存更新！'); 
+        }
+        
+        editingClientIndex = -1; 
+        document.getElementById('client-submit-btn').textContent = '✨ 提交表單'; 
+        document.getElementById('client-cancel-btn').style.display = 'none';
+        clearClientForm(); // 清空並重新鎖定欄位
+        saveData(); 
+        renderClients(); 
+        updateSaleDropdowns(); 
+
+        if (wasEditing) {
+            switchTab('clients-tab', document.querySelectorAll('.tab')[4]);
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+    
+    function startEditClient(index) {
+        if (isClientSorting) toggleClientSort(); 
+        editingClientIndex = index; 
+        const c = clients[index];
+
+        // 只有在點擊修改時，才允許修改這三個欄位
+        document.getElementById('client-balance').disabled = false;
+        document.getElementById('client-is-member').disabled = false;
+        document.getElementById('client-free-classes').disabled = false;
+
+        // 【新增】點擊修改時更改標籤名稱
+        document.getElementById('client-balance-label').textContent = '儲值金餘額(此處修改金額不列入款項)';
+
+        document.getElementById('client-name').value = c.name || '';
+        document.getElementById('client-gender').value = c.gender || '未提供'; 
+        document.getElementById('client-is-member').value = c.isMember ? 'true' : 'false';
+        if(c.birthday) document.getElementById('client-birthday')._flatpickr.setDate(c.birthday); else document.getElementById('client-birthday')._flatpickr.clear();
+        document.getElementById('client-occupation').value = c.occupation || ''; 
+        document.getElementById('client-phone').value = c.phone || ''; 
+        document.getElementById('client-address').value = c.address || ''; 
+        document.getElementById('client-allergy').value = c.allergy || '';
+        document.getElementById('client-balance').value = c.balance !== undefined ? c.balance : 0; 
+        document.getElementById('client-free-classes').value = c.freeClasses !== undefined ? c.freeClasses : 0; // 帶入免費課程數
+
+        setCheckedValues('client-skin-conditions', c.skinConditions); 
+        setCheckedValues('client-lifestyle', c.lifestyle);
+
+        document.getElementById('client-submit-btn').textContent = '💾 儲存修改內容'; 
+        document.getElementById('client-cancel-btn').style.display = 'inline-block'; 
+        switchTab('survey-tab', document.querySelectorAll('.tab')[document.querySelectorAll('.tab').length - 1]); 
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    function cancelClientEdit() { 
+        editingClientIndex = -1; 
+        document.getElementById('client-submit-btn').textContent = '✨ 提交表單'; 
+        document.getElementById('client-cancel-btn').style.display = 'none'; 
+        clearClientForm(); // 清空並重新鎖定欄位
+        switchTab('clients-tab', document.querySelectorAll('.tab')[4]); 
+    }
+    function deleteClient(index, btn) {
+        if (isClientSorting) toggleClientSort();
+        if (!btn.dataset.confirmed) { btn.textContent = "確定"; btn.style.backgroundColor = "#d32f2f"; btn.dataset.confirmed = "true"; setTimeout(() => { if (btn && btn.dataset.confirmed) { btn.textContent = "刪除"; btn.style.backgroundColor = ""; delete btn.dataset.confirmed; } }, 3000); } 
+        else { const targetId = clients[index].id; clients.splice(index, 1); if (targetId) syncWithGoogle('delete', 'clients', { id: targetId }); if (editingClientIndex === index) cancelClientEdit(); saveData(); renderClients(); updateSaleDropdowns(); }
+    }
+    
+    function renderClients() {
+        const tbody = document.getElementById('clients-table-body'); if(!tbody) return; tbody.innerHTML = '';
+        clients.forEach((c, index) => { if(c) { 
+            const bal = c.balance !== undefined ? c.balance : 0; 
+            const fClass = c.freeClasses !== undefined ? c.freeClasses : 0; // 取得課程數
+            tbody.innerHTML += `<tr data-index="${index}">
+                <td><strong>${c.name || '未命名'}</strong></td>
+                <td>${c.gender || '-'}</td>
+                <td>${c.isMember ? '會員' : '一般'}</td>
+                <td style="color: #8C6B52; font-weight: bold;">$${bal}</td>
+                <td>${c.birthday || '-'}</td>
+                <td>${c.occupation || '-'}</td>
+                <td>${c.phone || '-'}</td>
+                <td style="font-weight: bold; color: #A68064;">${fClass} 堂</td>
+                <td class="action-cell">
+                    <button class="btn-info" onclick="showClientModal(${index})">詳細</button>
+                    <button class="btn-warning" onclick="startEditClient(${index})">修改</button>
+                    <button class="btn-warning" style="background-color: #D0C3B6;" onclick="depositClient(${index})">儲值</button>
+                    <button class="btn-danger" onclick="deleteClient(${index}, this)">刪除</button>
+                </td>
+            </tr>`; 
+        }});
+    }
+    function showClientModal(index) {
+        const c = clients[index]; if(!c) return;
+        document.getElementById('detail-name').textContent = c.name || '未填寫'; document.getElementById('detail-gender').textContent = c.gender || '未提供'; document.getElementById('detail-member').textContent = c.isMember ? '👑 會員' : '一般客戶'; document.getElementById('detail-balance').textContent = '$' + (c.balance !== undefined ? c.balance : 0); document.getElementById('detail-free-classes').textContent = c.freeClasses !== undefined ? c.freeClasses : 0;
+        document.getElementById('detail-birthday').textContent = c.birthday || '未填寫'; document.getElementById('detail-occupation').textContent = c.occupation || '未填寫'; document.getElementById('detail-phone').textContent = c.phone || '未填寫'; document.getElementById('detail-address').textContent = c.address || '未填寫'; document.getElementById('detail-allergy').textContent = c.allergy || '無紀錄'; document.getElementById('detail-skin').textContent = (c.skinConditions && c.skinConditions.length > 0) ? c.skinConditions.join('、') : '無紀錄'; document.getElementById('detail-lifestyle').textContent = (c.lifestyle && c.lifestyle.length > 0) ? c.lifestyle.join('、') : '無紀錄';
+        document.getElementById('client-modal').classList.add('active');
+    }
+    function toggleClientSort() {
+        isClientSorting = !isClientSorting; 
+        const btn = document.getElementById('client-sort-btn'); 
+        const tbody = document.getElementById('clients-table-body');
+        
+        if (isClientSorting) { 
+            btn.textContent = '完成'; 
+            btn.style.backgroundColor = '#2ecc71'; 
+            btn.style.color = 'white'; 
+            tbody.classList.add('sorting-active'); 
+            tbody.querySelectorAll('tr').forEach(row => { 
+                row.setAttribute('draggable', 'true'); 
+                row.addEventListener('dragstart', handleDragStart); 
+                row.addEventListener('dragover', handleDragOver); 
+                row.addEventListener('drop', handleDrop); 
+                row.addEventListener('dragend', handleDragEnd); 
+            }); 
+        } else { 
+            btn.textContent = '排序'; 
+            btn.style.backgroundColor = ''; 
+            btn.style.color = ''; 
+            tbody.classList.remove('sorting-active'); 
+            tbody.querySelectorAll('tr').forEach(row => row.removeAttribute('draggable')); 
+            
+            const newClients = []; 
+            tbody.querySelectorAll('tr').forEach(row => { 
+                const idx = parseInt(row.dataset.index); 
+                if (!isNaN(idx) && clients[idx]) newClients.push(clients[idx]); 
+            }); 
+            
+            clients = newClients; 
+            saveData(); 
+            
+            // ▼ 修正這裡：直接把排序好的完整 clients 陣列傳給後端 ▼
+            syncWithGoogle('reorder', 'clients', clients);
+            // ▲ 修正結束 ▲
+
+            renderClients(); 
+            updateSaleDropdowns(); 
+        }
+    }
+    function handleDragStart(e) { dragRow = this; this.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', ''); }
+    function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (this === dragRow || this.parentNode !== dragRow.parentNode) return; const bounding = this.getBoundingClientRect(); const offset = e.clientY - bounding.top; if (offset > bounding.height / 2) this.after(dragRow); else this.before(dragRow); }
+    function handleDragEnd(e) { this.classList.remove('dragging'); dragRow = null; }
+    function handleDrop(e) { e.preventDefault(); }
+
+    // --- 銷售管理核心 ---
+    function updateSaleDropdowns() {
+        const clientSelect = document.getElementById('sale-client'); if(!clientSelect) return; 
+        const savedValue = clientSelect.value; // 記憶當前選擇的客戶
+        
+        clientSelect.innerHTML = '<option value="">請選擇客戶...</option>'; 
+        clients.forEach((c, index) => { if(c) clientSelect.innerHTML += `<option value="${index}">${c.name}</option>`; });
+        
+        // 將剛剛記憶的客戶重新選上
+        if (savedValue !== "") clientSelect.value = savedValue;
+        
+        if (editingSaleIndex === -1) { 
+            if (!document.getElementById('sale-date').value) document.getElementById('sale-date')._flatpickr.setDate(new Date()); 
+        }
+        checkMemberStatus();
+        
+        document.querySelectorAll('.sale-row').forEach(row => { 
+            const selectElement = row.querySelector('.item-product'), savedProductIndex = selectElement.value, rowCategory = row.dataset.category || '商品'; 
+            let productOptions = '<option value="">請選擇...</option>'; 
+            products.forEach((p, idx) => { if(p && p.category === rowCategory) productOptions += `<option value="${idx}">[${p.code || '-'}] ${p.name}</option>`; }); 
+            selectElement.innerHTML = productOptions; 
+            
+            // 將剛剛記憶的產品選項重新選上
+            if (savedProductIndex !== "") selectElement.value = savedProductIndex; 
+        });
+    }
+    function checkMemberStatus() {
+        const clientIndex = document.getElementById('sale-client').value, phoneInput = document.getElementById('sale-phone'), infoContainer = document.getElementById('sale-client-info');
+        if (clientIndex !== "" && clients[clientIndex]) { 
+            const c = clients[clientIndex]; 
+            currentIsMember = c.isMember; 
+            document.getElementById('sale-member-text').textContent = currentIsMember ? "⭐ 會員 (享會員價)" : "一般客戶 (原價)"; 
+            
+            // ▼ 這是新增的「性別」資料綁定 ▼
+            const genderText = document.getElementById('sale-gender-text');
+            if (genderText) {
+                genderText.textContent = c.gender || '-'; 
+            }
+            // ▲ 這是新增的「性別」資料綁定 ▲
+
+            document.getElementById('sale-balance-text').textContent = '$' + (c.balance !== undefined ? c.balance : 0); 
+            document.getElementById('sale-birthday-text').textContent = c.birthday || '-'; 
+            document.getElementById('sale-occupation-text').textContent = c.occupation || '-'; 
+            
+            // 這裡保留你原本可能有的其他欄位 (如地址、贈送課程等，視你 HTML 結構而定)
+            const addressText = document.getElementById('sale-address-text');
+            if (addressText) addressText.textContent = c.address || '-'; 
+            
+            const freeClassesText = document.getElementById('sale-free-classes-text');
+            if (freeClassesText) freeClassesText.textContent = (c.freeClasses !== undefined ? c.freeClasses : 0) + ' 堂';
+            
+            phoneInput.value = c.phone || ''; 
+            infoContainer.style.display = 'block'; 
+        } else { 
+            currentIsMember = false; 
+            phoneInput.value = ''; 
+            infoContainer.style.display = 'none'; 
+        } 
+        calculateTotal();
+    }
+    function addSaleItemRow(category = '商品', selectedProdName = "", qty = 1) {
+        const tbodyId = category === '課程' ? 'sale-course-items-body' : 'sale-product-items-body'; 
+        const tbody = document.getElementById(tbodyId); if(!tbody) return; 
+        const rowId = 'item-' + Date.now() + Math.floor(Math.random()*1000);
+        
+        let productOptions = '<option value="">請選擇...</option>'; 
+        products.forEach((p, index) => { 
+            if(p && p.category === category) productOptions += `<option value="${index}" ${p.name === selectedProdName ? 'selected' : ''}>[${p.code || '-'}] ${p.name}</option>`; 
+        });
+        
+        let rowHtml = '';
+        if (category === '課程') {
+            // 在課程名稱旁插入「是否為贈送課程」的下拉式選單，預設為 false (否)
+            rowHtml = `<tr class="sale-row" id="${rowId}" data-category="${category}">
+                <td><select class="item-product" onchange="calculateTotal()">${productOptions}</select></td>
+                <td>
+                    <select class="item-is-free" onchange="calculateTotal()">
+                        <option value="false" selected>否</option>
+                        <option value="true">是</option>
+                    </select>
+                </td>
+                <td><span class="item-unit-price" style="color: #6B5A4E;">$0</span></td>
+                <td><input type="number" class="item-qty no-spinners" value="${qty}" min="1" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value === '' || this.value < 1) this.value = this.dataset.oldValue || 1; calculateTotal();" oninput="this.value = this.value.replace(/[^0-9]/g, ''); calculateTotal();"></td>
+                <td><span class="item-row-total" style="font-weight: bold; color: #8C6B52;">$0</span></td>
+                <td style="text-align: center;"><button class="btn-danger" onclick="document.getElementById('${rowId}').remove(); calculateTotal();" style="padding: 8px 14px; font-size: 13px;">移除</button></td>
+            </tr>`;
+        } else {
+            rowHtml = `<tr class="sale-row" id="${rowId}" data-category="${category}">
+                <td><select class="item-product" onchange="calculateTotal()">${productOptions}</select></td>
+                <td><span class="item-unit-price" style="color: #6B5A4E;">$0</span></td>
+                <td><input type="number" class="item-qty no-spinners" value="${qty}" min="1" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value === '' || this.value < 1) this.value = this.dataset.oldValue || 1; calculateTotal();" oninput="this.value = this.value.replace(/[^0-9]/g, ''); calculateTotal();"></td>
+                <td><span class="item-row-total" style="font-weight: bold; color: #8C6B52;">$0</span></td>
+                <td style="text-align: center;"><button class="btn-danger" onclick="document.getElementById('${rowId}').remove(); calculateTotal();" style="padding: 8px 14px; font-size: 13px;">移除</button></td>
+            </tr>`;
+        }
+        
+        tbody.insertAdjacentHTML('beforeend', rowHtml); 
+        calculateTotal();
+    }
+
+    function calculateTotal() {
+        let grandTotal = 0;
+        let isFirstCourse = true; 
+
+        document.querySelectorAll('.sale-row').forEach(row => { 
+            const productIndex = row.querySelector('.item-product').value, qty = parseInt(row.querySelector('.item-qty').value) || 0;
+            const unitPriceDisplay = row.querySelector('.item-unit-price'), rowTotalDisplay = row.querySelector('.item-row-total');
+            const category = row.dataset.category; 
+            
+            // 判斷當前這列是不是選擇了「贈送課程」
+            const isFreeSelect = row.querySelector('.item-is-free');
+            const isFree = isFreeSelect ? (isFreeSelect.value === 'true') : false;
+
+            if (productIndex !== "" && products[productIndex]) { 
+                const p = products[productIndex];
+                
+                // 如果是贈送課程，基準價跟加購價都當作 0 元計
+                let basePrice = isFree ? 0 : ((currentIsMember && p.memberPrice > 0) ? p.memberPrice : p.price);
+                let addonPrice = isFree ? 0 : (currentIsMember ? (p.memberAddonPrice > 0 ? p.memberAddonPrice : basePrice) : (p.nonMemberAddonPrice > 0 ? p.nonMemberAddonPrice : basePrice));
+                
+                let rowTotal = 0, displayHtml = '';
+
+                if (qty > 0) {
+                    if (category === '課程') {
+                        if (isFree) {
+                            rowTotal = 0;
+                            displayHtml = `$0 <br><small style="font-size:12px; color:#D98A82;">(贈送課程)</small>`;
+                        } else if (isFirstCourse) { 
+                            rowTotal = basePrice + (qty - 1) * addonPrice; 
+                            displayHtml = `$${basePrice}`; 
+                            isFirstCourse = false; 
+                        } else { 
+                            rowTotal = qty * addonPrice; 
+                            displayHtml = `$${addonPrice} <br><small style="font-size:12px; color:#A68064;">(加購價)</small>`; 
+                        }
+                    } else {
+                        rowTotal = basePrice + (qty - 1) * addonPrice; displayHtml = `$${basePrice}`;
+                        if(addonPrice !== basePrice) displayHtml += `<br><small style="font-size:12px; color:#A68064;">(同品項第二件起: $${addonPrice})</small>`;
+                    }
+                } else { displayHtml = isFree ? '$0' : `$${basePrice}`; }
+                grandTotal += rowTotal; 
+                if (unitPriceDisplay) unitPriceDisplay.innerHTML = displayHtml;
+                if (rowTotalDisplay) rowTotalDisplay.textContent = '$' + rowTotal; 
+            } else { if (unitPriceDisplay) unitPriceDisplay.textContent = '$0'; if (rowTotalDisplay) rowTotalDisplay.textContent = '$0'; }
+        });
+        
+        const discount = parseInt(document.getElementById('sale-discount').value) || 0;
+        const subtotal = Math.max(grandTotal - discount, 0);
+        document.getElementById('sale-total').textContent = subtotal;
+    
+        const clientIndex = document.getElementById('sale-client').value, useBalanceInput = document.getElementById('sale-use-balance');
+        const maxOffsetDisplay = document.getElementById('max-offset-display'), actualPayDisplay = document.getElementById('sale-actual-pay');
+        
+        const changedElement = (arguments.length > 0 && arguments[0] instanceof HTMLElement) ? arguments[0] : null;
+    
+        let maxOffset = 0;
+        if (clientIndex !== "" && clients[clientIndex]) {
+            const client = clients[clientIndex];
+            let tempAvailableBalance = client.balance || 0;
+            if (editingSaleIndex !== -1 && sales[editingSaleIndex] && sales[editingSaleIndex].clientName === client.name) tempAvailableBalance += (sales[editingSaleIndex].paidByBalance || 0);
+            maxOffset = Math.min(subtotal, tempAvailableBalance);
+            maxOffsetDisplay.textContent = '$' + maxOffset;
+            useBalanceInput.max = maxOffset;
+    
+            let useBalance = parseInt(useBalanceInput.value) || 0;
+            if (useBalance > maxOffset) { useBalance = maxOffset; useBalanceInput.value = useBalance; }
+            if (maxOffset === 0 && useBalanceInput.value !== '' && useBalanceInput.value !== '0') { useBalanceInput.value = '0'; }
+        } else {
+            maxOffsetDisplay.textContent = '$0';
+            useBalanceInput.value = 0; useBalanceInput.max = 0;
+        }
+    
+        let currentUseBalance = parseInt(useBalanceInput.value) || 0;
+        const payCashInput = document.getElementById('sale-pay-cash');
+        const payTransferInput = document.getElementById('sale-pay-transfer');
+        const payLineInput = document.getElementById('sale-pay-line');
+
+        let payCash = parseInt(payCashInput.value) || 0;
+        let payTransfer = parseInt(payTransferInput.value) || 0;
+        let payLine = parseInt(payLineInput.value) || 0;
+        
+let totalPayments = payCash + payTransfer + payLine;
+
+        if ((currentUseBalance + totalPayments) > subtotal) {
+            showCustomAlert("輸入的金額已超過應收總計，請重新確認！");
+            
+            if (changedElement) {
+                changedElement.value = '0'; 
+                
+                currentUseBalance = parseInt(useBalanceInput.value) || 0;
+                payCash = parseInt(payCashInput.value) || 0;
+                payTransfer = parseInt(payTransferInput.value) || 0;
+                payLine = parseInt(payLineInput.value) || 0;
+                totalPayments = payCash + payTransfer + payLine;
+            }
+        }
+
+        actualPayDisplay.textContent = totalPayments;
+
+        const remainingToPay = Math.max(subtotal - currentUseBalance - totalPayments, 0);
+        const remainingPayDisplay = document.getElementById('sale-remaining-pay');
+        const remainingPayContainer = document.getElementById('remaining-pay-container');
+
+        if (remainingPayDisplay) remainingPayDisplay.textContent = remainingToPay;
+        
+        if (remainingPayContainer) {
+            remainingPayContainer.style.display = (remainingToPay === 0) ? 'none' : 'block';
+        }
+    
+        if (payLine > 0) {
+            document.getElementById('line-pay-fee-container').style.display = 'flex';
+            const rate = parseFloat(document.getElementById('sale-line-pay-rate').value) || 0;
+            const fee = Math.round(payLine * (rate / 100));
+            document.getElementById('sale-fee-amount').value = '扣 $' + fee;
+        } else {
+            document.getElementById('line-pay-fee-container').style.display = 'none';
+        }
+    }
+
+function saveSale() {
+        const date = document.getElementById('sale-date').value, clientIndex = document.getElementById('sale-client').value, discount = parseInt(document.getElementById('sale-discount').value) || 0;
+        if(!date || clientIndex === "") return showCustomAlert('請確認日期、手機號碼或選取正確客戶');
+        
+        const client = clients[clientIndex];
+        const items = []; 
+        let isFirstCourse = true;
+        let totalFreeClassesDeducted = 0; // 💡【新增】統計本次點選了多少堂贈送課程
+
+        document.querySelectorAll('.sale-row').forEach(row => { 
+            const productIndex = row.querySelector('.item-product').value, qty = parseInt(row.querySelector('.item-qty').value) || 0; 
+            const category = row.dataset.category; 
+
+            // 💡【新增】讀取當前這列是不是選擇了「贈送課程」
+            const isFreeSelect = row.querySelector('.item-is-free');
+            const isFree = isFreeSelect ? (isFreeSelect.value === 'true') : false;
+
+            if (productIndex !== "" && products[productIndex]) { 
+                const p = products[productIndex]; 
+                
+                if (category === '課程' && isFree) {
+                    totalFreeClassesDeducted += qty; // 💡【新增】累加贈送課程數
+                }
+
+                // 💡【修改】如果是贈送課程，金額當作 0 元計
+                const basePrice = isFree ? 0 : ((currentIsMember && p.memberPrice > 0) ? p.memberPrice : p.price);
+                const addonPrice = isFree ? 0 : (currentIsMember ? (p.memberAddonPrice > 0 ? p.memberAddonPrice : basePrice) : (p.nonMemberAddonPrice > 0 ? p.nonMemberAddonPrice : basePrice));              
+                
+                let rowTotal = 0;
+                if (qty > 0) {
+                    if (category === '課程') {
+                        if (isFree) { rowTotal = 0; } // 💡【新增】贈送課程小計為 0
+                        else if (isFirstCourse) { rowTotal = basePrice + (qty - 1) * addonPrice; isFirstCourse = false; } 
+                        else { rowTotal = qty * addonPrice; }
+                    } else { rowTotal = basePrice + (qty - 1) * addonPrice; }
+                }
+                // 💡【修改】名稱若為贈送則加上 (贈送) 標記方便歷史紀錄識別
+                items.push({ name: p.name + (isFree ? ' (贈送)' : ''), qty, price: rowTotal }); 
+            } 
+        });
+        if(items.length === 0) return showCustomAlert('請至少輸入一項產品或課程'); 
+        
+        const total = parseInt(document.getElementById('sale-total').textContent);
+        const useBalance = parseInt(document.getElementById('sale-use-balance').value) || 0;
+        
+        const payCash = parseInt(document.getElementById('sale-pay-cash').value) || 0;
+        const payTransfer = parseInt(document.getElementById('sale-pay-transfer').value) || 0;
+        const payLine = parseInt(document.getElementById('sale-pay-line').value) || 0;
+        const actualPay = payCash + payTransfer + payLine;
+        
+        // 💡【新增】讀取備註欄位內容
+        const saleNote = document.getElementById('sale-note') ? document.getElementById('sale-note').value : '';
+        
+        if ((useBalance + actualPay) !== total) {
+            return showCustomAlert(`結帳金額有誤！款項尚未收齊！請重新確認。`);
+        }        
+        
+        let methods = [];
+        if (payCash > 0) methods.push('現金');
+        if (payTransfer > 0) methods.push('匯款');
+        if (payLine > 0) methods.push('Line Pay');
+        let paymentMethodStr = methods.length > 0 ? methods.join(' + ') : '儲值折抵';
+
+        const paymentFeeRate = parseFloat(document.getElementById('sale-line-pay-rate').value) || 0;
+        const paymentFee = payLine > 0 ? Math.round(payLine * (paymentFeeRate / 100)) : 0;
+
+        // 💡【修改】修改歷史紀錄防呆：點選儲存時，先暫時退回「舊紀錄」的儲值金與贈送課程數
+        if (editingSaleIndex !== -1) {
+            const oldSale = sales[editingSaleIndex];
+            const matchedClient = clients.find(c => c && c.name === oldSale.clientName);
+            if (matchedClient) {
+                matchedClient.balance = (matchedClient.balance || 0) + (oldSale.paidByBalance || 0);
+                matchedClient.freeClasses = (matchedClient.freeClasses || 0) + (oldSale.freeClassesDeducted || 0); // 💡【新增】暫時退回舊贈送課程
+            }
+        }
+
+        // 儲值金餘額不足防呆
+        if (useBalance > (client.balance || 0)) {
+            if (editingSaleIndex !== -1) {
+                const oldSale = sales[editingSaleIndex];
+                const matchedClient = clients.find(c => c && c.name === oldSale.clientName);
+                if (matchedClient) {
+                    matchedClient.balance -= (oldSale.paidByBalance || 0);
+                    matchedClient.freeClasses -= (oldSale.freeClassesDeducted || 0); // 💡【新增】防呆失敗，扣回
+                }
+            }
+            return showCustomAlert(`儲值金不足！客戶目前餘額僅有 $${client.balance}`);
+        }
+
+        // 💡【新增】免費贈送課程數不足防呆
+        if (totalFreeClassesDeducted > (client.freeClasses || 0)) {
+            if (editingSaleIndex !== -1) {
+                const oldSale = sales[editingSaleIndex];
+                const matchedClient = clients.find(c => c && c.name === oldSale.clientName);
+                if (matchedClient) {
+                    matchedClient.balance -= (oldSale.paidByBalance || 0);
+                    matchedClient.freeClasses -= (oldSale.freeClassesDeducted || 0); // 💡【新增】防呆失敗，扣回
+                }
+            }
+            return showCustomAlert(`⚠️ 儲存失敗！剩餘免費課程數不足！ ⚠️\n（目前剩餘：${client.freeClasses || 0} 堂，本次欲折抵：${totalFreeClassesDeducted} 堂）`);
+        }
+
+        // 通過防呆，正式執行扣除
+        client.balance = (client.balance || 0) - useBalance;
+        if (client.balance <= 0) {
+            client.balance = 0;
+            if (client.isMemberByDeposit) {
+                client.isMember = false;
+                client.isMemberByDeposit = false; // 重置旗標
+                showCustomAlert("⚠️ 溫馨提示：客戶儲值金已歸零，系統已自動移除其儲值升級的會員資格。");
+            }
+        }
+
+        client.freeClasses = (client.freeClasses || 0) - totalFreeClassesDeducted; // 💡【新增】正式扣除免費課程
+
+        let targetId = editingSaleIndex === -1 ? generateId('sal') : sales[editingSaleIndex].id || generateId('sal');
+        const saleRecord = { 
+            id: targetId, date, clientName: client.name, isMember: currentIsMember, items, 
+            discount, total, paidByBalance: useBalance, paidByActual: actualPay,
+            paymentMethod: paymentMethodStr, paymentFeeRate, paymentFee,
+            paymentBreakdown: { cash: payCash, transfer: payTransfer, line: payLine },
+            freeClassesDeducted: totalFreeClassesDeducted, // 💡【新增】儲存本次扣除的課程數到銷售紀錄中
+            note: saleNote // 💡【新增】儲存備註到銷售紀錄
+        };
+        
+        if (editingSaleIndex === -1) { sales.push(saleRecord); syncWithGoogle('insert', 'sales', saleRecord); } 
+        else { sales[editingSaleIndex] = saleRecord; syncWithGoogle('update', 'sales', saleRecord); cancelSaleEdit(); }
+
+        syncWithGoogle('update', 'clients', client);
+        saveData(); 
+        
+        document.getElementById('sale-course-items-body').innerHTML = ''; document.getElementById('sale-product-items-body').innerHTML = ''; 
+        document.getElementById('sale-discount').value = 0; document.getElementById('sale-use-balance').value = 0;
+        document.getElementById('sale-pay-cash').value = 0; document.getElementById('sale-pay-transfer').value = 0; document.getElementById('sale-pay-line').value = 0;
+        document.getElementById('sale-phone').value = ''; document.getElementById('sale-client-info').style.display = 'none'; 
+        if (document.getElementById('sale-note')) document.getElementById('sale-note').value = ''; // 💡【新增】重設清空備註欄
+        
+        document.getElementById('sale-client').value = ''; 
+        currentIsMember = false;
+        
+        addSaleItemRow('課程'); addSaleItemRow('商品'); 
+        calculateTotal();
+        renderClients(); // 💡【新增】更新客戶列表的剩餘程顯示
+        
+        if(client.balance > 0 || !currentIsMember) { showCustomAlert('✨ 銷售結帳成功！'); }
+    }
+
+    function initFilterMonth() { if (!currentFilterMonth) { const now = new Date(); currentFilterMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'); } }
+    function renderMonthButtons() {
+        initFilterMonth(); const container = document.getElementById('month-list'); if(!container) return; container.innerHTML = '';
+        monthsSet = new Set(); sales.forEach(s => { if(s && s.date) monthsSet.add(s.date.substring(0, 7)); }); monthsSet.add(currentFilterMonth); 
+        Array.from(monthsSet).sort().reverse().forEach(m => { container.innerHTML += `<button class="month-tag ${m === currentFilterMonth ? 'active' : ''}" onclick="changeFilterMonth('${m}')">${m}</button>`; });
+    }
+    function changeFilterMonth(monthStr) { currentFilterMonth = monthStr; renderMonthButtons(); renderRecords(); }
+    
+    function renderRecords() {
+        initFilterMonth(); const tbody = document.getElementById('records-table-body'); if(!tbody) return; tbody.innerHTML = '';
+        const filteredSales = sales.map((sale, index) => ({ ...sale, originalIndex: index })).filter(s => s && s.date && s.date.startsWith(currentFilterMonth)).sort((a, b) => b.date.localeCompare(a.date) || b.originalIndex - a.originalIndex);
+        filteredSales.forEach(sale => {
+            if(sale && sale.items) { 
+                const courseItems = [], productItems = [];
+                sale.items.forEach(i => { 
+                    // 💡【修正】先去掉 " (贈送)" 尾碼再比對產品清單，否則會因名稱不符而誤判為「商品」
+                    let cleanName = i.name || '';
+                    if (cleanName.endsWith(' (贈送)')) {
+                        cleanName = cleanName.replace(' (贈送)', '');
+                    }
+                    
+                    const matchedProduct = products.find(p => p && p.name === cleanName); 
+                    const category = matchedProduct ? matchedProduct.category : '商品'; 
+                    const itemText = `${i.name || '未指定'} x ${i.qty || 0} <span style="font-size:12px; color:#A68064;">(小計: $${i.price || 0})</span>`; 
+                    if (category === '課程') courseItems.push(itemText); else productItems.push(itemText); 
+                });
+                
+                let payDetailHtml = `<strong>總計: $${sale.total || 0}</strong>`;
+                if (sale.paidByBalance > 0) payDetailHtml += `<br><small style="color:#8C6B52;">儲值折抵: -$${sale.paidByBalance}</small>`;
+                
+                if (sale.paymentBreakdown) {
+                    if (sale.paymentBreakdown.line > 0) { payDetailHtml += `<br><small style="color:#2ecc71; font-weight:bold;">📱 Line Pay: $${sale.paymentBreakdown.line}</small>`; if (sale.paymentFee > 0) payDetailHtml += `<br><small style="color:#e67e22;">(被扣手續費: -$${sale.paymentFee})</small>`; }
+                    if (sale.paymentBreakdown.transfer > 0) { payDetailHtml += `<br><small style="color:#8C6B52; font-weight:bold;">🏦 匯款: $${sale.paymentBreakdown.transfer}</small>`; }
+                    if (sale.paymentBreakdown.cash > 0) { payDetailHtml += `<br><small style="color:#2ecc71; font-weight:bold;">💵 收現: $${sale.paymentBreakdown.cash}</small>`; }
+                } else {
+                    if (sale.paymentMethod === 'Line Pay') { payDetailHtml += `<br><small style="color:#2ecc71; font-weight:bold;">📱 Line Pay: $${sale.paidByActual || 0}</small>`; if(sale.paymentFee > 0) payDetailHtml += `<br><small style="color:#e67e22;">(被扣手續費: -$${sale.paymentFee})</small>`; } 
+                    else if (sale.paymentMethod === '匯款') { payDetailHtml += `<br><small style="color:#8C6B52; font-weight:bold;">🏦 匯款: $${sale.paidByActual || 0}</small>`; } 
+                    else { payDetailHtml += `<br><small style="color:#2ecc71; font-weight:bold;">💵 收現: $${sale.paidByActual || 0}</small>`; }
+                }
+
+                // 如果紀錄中有備註，在付款細節下方顯示出來
+                if (sale.note) {
+                    payDetailHtml += `<br><small style="color:#666; background:#f5f5f5; padding:2px 4px; border-radius:3px; display:inline-block; margin-top:4px;">📝 備註: ${sale.note}</small>`;
+                }
+
+                const isDeposit = sale.items && sale.items.some(i => i.name === "💰 儲值金儲值");
+                const editButtonHtml = isDeposit ? `<button class="btn-warning" style="opacity: 0.6; cursor: not-allowed;" onclick="showCustomAlert('☕ 儲值紀錄無法直接修改。\\\\n若金額有誤，請點選「刪除」後重新至「客戶管理」中進行儲值。')">修改</button>` : `<button class="btn-warning" onclick="startEditSale(${sale.originalIndex})">修改</button>`;
+                tbody.innerHTML += `<tr><td>${sale.date || '-'}</td><td><strong>${sale.clientName || '未知客戶'}</strong><br><small style="color:#999">${sale.isMember ? '會員價' : '一般價'}</small></td><td>${courseItems.length > 0 ? courseItems.join('<br>') : '-'}</td><td>${productItems.length > 0 ? productItems.join('<br>') : '-'}</td><td>$${sale.discount || 0}</td><td>${payDetailHtml}</td><td class="action-cell">${editButtonHtml}<button class="btn-danger" onclick="deleteSale(${sale.originalIndex}, this)">刪除</button></td></tr>`; 
+            }
+        });
+        if(filteredSales.length === 0) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#999; padding: 30px;">此月份目前尚無銷售紀錄</td></tr>';
+    }
+    
+    function startEditSale(index) {
+        editingSaleIndex = index; const sale = sales[index]; switchTab('sales-tab', document.querySelectorAll('.tab')[0]); document.getElementById('sale-date')._flatpickr.setDate(sale.date); let foundClientIdx = clients.findIndex(c => c && c.name === sale.clientName); document.getElementById('sale-client').value = foundClientIdx !== -1 ? foundClientIdx : ""; checkMemberStatus(); 
+        document.getElementById('sale-course-items-body').innerHTML = ''; document.getElementById('sale-product-items-body').innerHTML = ''; 
+        
+        // 💡【修改】解析並處理含有 " (贈送)" 尾碼的課程名稱，並自動切換下拉選單狀態
+        sale.items.forEach(item => { 
+            let cleanName = item.name || '';
+            let isFreeItem = false;
+            if (cleanName.endsWith(' (贈送)')) {
+                cleanName = cleanName.replace(' (贈送)', '');
+                isFreeItem = true;
+            }
+            const matchedProduct = products.find(p => p && p.name === cleanName); 
+            addSaleItemRow(matchedProduct ? matchedProduct.category : '商品', cleanName, item.qty); 
+
+            // 如果是贈送課程，在新增完該列後，找到對應的下拉選單並選取「是」
+            if (isFreeItem) {
+                const rows = document.querySelectorAll('.sale-row');
+                const lastRow = rows[rows.length - 1];
+                if (lastRow) {
+                    const freeSelect = lastRow.querySelector('.item-is-free');
+                    if (freeSelect) freeSelect.value = 'true';
+                }
+            }
+        }); 
+        addSaleItemRow('課程'); addSaleItemRow('商品'); 
+        document.getElementById('sale-discount').value = sale.discount; 
+        document.getElementById('sale-use-balance').value = sale.paidByBalance || 0;
+        
+        if (sale.paymentBreakdown) {
+            document.getElementById('sale-pay-cash').value = sale.paymentBreakdown.cash || 0;
+            document.getElementById('sale-pay-transfer').value = sale.paymentBreakdown.transfer || 0;
+            document.getElementById('sale-pay-line').value = sale.paymentBreakdown.line || 0;
+        } else {
+            let oldMethod = sale.paymentMethod || '現金';
+            document.getElementById('sale-pay-cash').value = 0; document.getElementById('sale-pay-transfer').value = 0; document.getElementById('sale-pay-line').value = 0;
+            if (oldMethod.includes('Line Pay')) document.getElementById('sale-pay-line').value = sale.paidByActual || 0;
+            else if (oldMethod.includes('匯款')) document.getElementById('sale-pay-transfer').value = sale.paidByActual || 0;
+            else if (oldMethod.includes('現金')) document.getElementById('sale-pay-cash').value = sale.paidByActual || 0;
+        }
+        
+        if(sale.paymentFeeRate) document.getElementById('sale-line-pay-rate').value = sale.paymentFeeRate;
+        
+        // 💡【新增】修改歷史紀錄時，將舊有的備註文字填回輸入框
+        if (document.getElementById('sale-note')) {
+            document.getElementById('sale-note').value = sale.note || '';
+        }
+        
+        calculateTotal();
+
+        document.getElementById('sale-form-title').textContent = '📝 修改歷史銷售紀錄'; document.getElementById('sale-submit-btn').textContent = '確認修改並儲存'; document.getElementById('sale-cancel-btn').style.display = 'inline-block'; window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelSaleEdit() { 
+        editingSaleIndex = -1; document.getElementById('sale-form-title').textContent = '新增銷售紀錄'; document.getElementById('sale-submit-btn').textContent = '儲存'; document.getElementById('sale-cancel-btn').style.display = 'none'; 
+        document.getElementById('sale-course-items-body').innerHTML = ''; document.getElementById('sale-product-items-body').innerHTML = ''; 
+        document.getElementById('sale-discount').value = 0; document.getElementById('sale-use-balance').value = 0; 
+        document.getElementById('sale-pay-cash').value = 0; document.getElementById('sale-pay-transfer').value = 0; document.getElementById('sale-pay-line').value = 0;
+        document.getElementById('sale-phone').value = ''; document.getElementById('sale-client-info').style.display = 'none'; 
+        if (document.getElementById('sale-note')) document.getElementById('sale-note').value = ''; // 💡【新增】取消修改時清空備註欄
+        addSaleItemRow('課程'); addSaleItemRow('商品'); calculateTotal(); 
+    }
+    
+    function deleteSale(index, btn) {
+        if (!btn.dataset.confirmed) { btn.textContent = "確定"; btn.style.backgroundColor = "#d32f2f"; btn.dataset.confirmed = "true"; setTimeout(() => { if (btn && btn.dataset.confirmed) { btn.textContent = "刪除"; btn.style.backgroundColor = ""; delete btn.dataset.confirmed; } }, 3000); } 
+        else { 
+            const oldSale = sales[index]; const targetId = oldSale.id;
+            const matchedClient = clients.find(c => c && c.name === oldSale.clientName);
+            if (matchedClient) {
+                const isDepositSale = oldSale.items && oldSale.items.some(item => item.name === "💰 儲值金儲值");
+                if (isDepositSale) {
+                    const depositAmount = oldSale.items.reduce((sum, item) => item.name === "💰 儲值金儲值" ? sum + item.price : sum, 0);
+                    matchedClient.balance = Math.max((matchedClient.balance || 0) - depositAmount, 0);
+                } else { 
+                    matchedClient.balance = (matchedClient.balance || 0) + (oldSale.paidByBalance || 0); 
+                    // 💡【新增】當刪除一般銷售紀錄時，必須歸還當時扣掉的免費課程數
+                    matchedClient.freeClasses = (matchedClient.freeClasses || 0) + (oldSale.freeClassesDeducted || 0);
+                }
+                syncWithGoogle('update', 'clients', matchedClient);
+            }
+            sales.splice(index, 1); if (targetId) syncWithGoogle('delete', 'sales', { id: targetId }); saveData(); renderMonthButtons(); renderRecords(); renderClients();
+        }
+    }
+
+    function saveData() { localStorage.setItem('clients', JSON.stringify(clients)); localStorage.setItem('products', JSON.stringify(products)); localStorage.setItem('sales', JSON.stringify(sales)); localStorage.setItem('expenses', JSON.stringify(expenses)); }
+
+    renderProducts(); renderClients(); updateSaleDropdowns(); addSaleItemRow('課程'); addSaleItemRow('商品'); initFilterMonth();
+    // 👇 ======== 新增：按下 Enter 自動確認 (銷售結帳) ======== 👇
+    document.getElementById('sales-tab').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            if (event.target.tagName.toLowerCase() !== 'textarea' && event.target.tagName.toLowerCase() !== 'select') {
+                event.preventDefault(); 
+                saveSale();
+            }
+        }
+    });
+    // 👆 =================================================== 👆
+    // 👇 ======== 新增：按下 Enter 自動確認 (客戶儲值) ======== 👇
+    document.getElementById('deposit-modal').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            confirmDeposit();
+        }
+    });
+    // 👆 =================================================== 👆
+
+    // --- 網頁載入時的登入狀態檢查 (避免重新整理後登出) ---
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+            document.getElementById('login-overlay').style.display = 'none'; 
+            applyUserPermissions(); 
+        }
+    });
+
+    // --- 網頁載入時，從 GAS 讀取最新資料 ---
+    window.onload = async function() {
+        if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("請在此貼上")) {
+            console.warn("尚未設定 GOOGLE_SCRIPT_URL");
+            return;
+        }
+
+        try {
+            const response = await fetch(GOOGLE_SCRIPT_URL + "?action=readAll");
+            const data = await response.json();
+
+            if (data.status === "success") {
+                localStorage.setItem('clients', JSON.stringify(data.clients || []));
+                localStorage.setItem('products', JSON.stringify(data.products || []));
+                localStorage.setItem('sales', JSON.stringify(data.sales || []));
+                localStorage.setItem('expenses', JSON.stringify(data.expenses || []));
+                localStorage.setItem('users', JSON.stringify(data.users || []));
+
+                clients = data.clients || [];
+                products = data.products || [];
+                sales = data.sales || [];
+                expenses = data.expenses || [];
+                
+                // 雲端抓下來的資料放進 users (供登入驗證使用)
+                users = data.users || [];
+                if (data.users && data.users.length > 0) {
+                    systemUsers = data.users;
+                    localStorage.setItem('systemUsers', JSON.stringify(systemUsers));
+                }
+
+                renderClients();
+                renderProducts();
+                updateSaleDropdowns();
+                renderRecords(); 
+                if (typeof renderAccounts === 'function') {
+                    renderAccounts();
+                }
+
+            } else {
+                console.error("雲端資料讀取失敗，將使用本機 localStorage 資料");
+            }
+        } catch (error) {
+            console.error("Fetch 錯誤:", error);
+        }
+    };  
+
+</script>
+</body>
+</html>
