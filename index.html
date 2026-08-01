@@ -259,14 +259,14 @@
                 <thead><tr><th>課程名稱</th><th style="width: 110px;">贈送課程</th><th style="width: 120px;">單價明細</th><th style="width: 100px;">數量</th><th style="width: 120px;">銷售金額</th><th style="width: 80px; text-align: center;">操作</th></tr></thead>
                 <tbody id="sale-course-items-body"></tbody>
             </table>
-            <button onclick="addSaleItemRow('課程')" class="btn-warning" style="margin-top: 10px; margin-bottom: 25px;">+ 新增課程</button>
+            <button onclick="addSaleItemRow('課程')" class="btn-warning" style="margin-top: 10px; margin-bottom: 25px;">+ 新增課程(F2)</button>
 
             <h3 style="color: #A68064;">銷售商品</h3>
             <table>
                 <thead><tr><th>產品名稱</th><th style="width: 120px;">單價明細</th><th style="width: 100px;">數量</th><th style="width: 120px;">銷售金額</th><th style="width: 80px; text-align: center;">操作</th></tr></thead>
                 <tbody id="sale-product-items-body"></tbody>
             </table>
-            <button onclick="addSaleItemRow('商品')" class="btn-warning" style="margin-top: 10px; margin-bottom: 20px;">+ 新增商品</button>
+            <button onclick="addSaleItemRow('商品')" class="btn-warning" style="margin-top: 10px; margin-bottom: 20px;">+ 新增商品(F3)</button>
         </div>
 
         <!-- 新增支付大標題 -->
@@ -322,7 +322,7 @@
             <div id="remaining-pay-container" class="total-display" style="font-size: 18px; padding: 12px; background: #FFF4E6; border: 1px dashed #E67E22; color: #D35400; display: none;">剩餘應收: <span id="sale-remaining-pay">0</span> 元</div>
             <div class="total-display" style="font-size: 22px; padding: 12px; background: #FAF5F0;">實收金額: <span id="sale-actual-pay">0</span> 元</div>
         </div>
-        <button id="sale-submit-btn" onclick="saveSale()">儲存</button>
+        <button id="sale-submit-btn" onclick="saveSale()">儲存(F4)</button>
         <button id="sale-cancel-btn" onclick="cancelSaleEdit()" class="btn-secondary" style="display: none; margin-left: 8px;">取消修改</button>
     </div>
 
@@ -349,7 +349,7 @@
             <div><label>金額</label><input type="number" id="expense-amount" class="no-spinners" min="0" placeholder="請輸入金額"></div>
             <div><label>備註</label><input type="text" id="expense-note" placeholder="可輸入費用細項"></div>
         </div>
-        <button id="expense-submit-btn" onclick="saveExpense()">新增支出</button><button id="expense-cancel-btn" onclick="cancelExpenseEdit()" class="btn-secondary" style="display: none; margin-left: 5px;">取消修改</button>
+        <button id="expense-submit-btn" onclick="saveExpense()">新增支出(F4)</button><button id="expense-cancel-btn" onclick="cancelExpenseEdit()" class="btn-secondary" style="display: none; margin-left: 5px;">取消修改</button>
 
         <h3 style="margin-top: 30px;">支出紀錄</h3>
         <label>選擇查看月份：</label><div id="expense-month-list" class="month-tags-container"></div>
@@ -419,7 +419,7 @@
             <div><label>非會員加購價</label><input type="number" id="product-non-member-addon-price" class="no-spinners" placeholder="若無請留空"></div>
             <div><label>會員加購價</label><input type="number" id="product-member-addon-price" class="no-spinners" placeholder="若無請留空"></div>
         </div>
-        <button id="product-submit-btn" onclick="saveProductForm()">新增產品</button><button id="product-cancel-btn" onclick="cancelProductEdit()" class="btn-secondary" style="display: none; margin-left: 5px;">取消修改</button>
+        <button id="product-submit-btn" onclick="saveProductForm()">新增產品(F4)</button><button id="product-cancel-btn" onclick="cancelProductEdit()" class="btn-secondary" style="display: none; margin-left: 5px;">取消修改</button>
 
         <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px;"><h3>產品列表</h3><button id="product-sort-btn" class="btn-secondary" onclick="toggleProductSort()">排序</button></div>
         <div style="overflow-x: auto;">
@@ -491,7 +491,7 @@
                     </div>
                 </div>
             </div>
-            <div style="text-align: center; margin-top: 30px;"><button id="client-submit-btn" onclick="saveClientForm()" style="font-size: 16px; padding: 14px 40px; border-radius: 30px;">✨ 提交表單</button><button id="client-cancel-btn" onclick="cancelClientEdit()" class="btn-secondary" style="display: none; margin-left: 15px; font-size: 16px; padding: 14px 30px; border-radius: 30px;">放棄修改</button></div>
+            <div style="text-align: center; margin-top: 30px;"><button id="client-submit-btn" onclick="saveClientForm()" style="font-size: 16px; padding: 14px 40px; border-radius: 30px;">✨ 提交表單(F4)</button><button id="client-cancel-btn" onclick="cancelClientEdit()" class="btn-secondary" style="display: none; margin-left: 15px; font-size: 16px; padding: 14px 30px; border-radius: 30px;">放棄修改</button></div>
         </div>
     </div>
 </div>
@@ -913,10 +913,37 @@
         if (fallbackButtons.length) fallbackButtons[0].focus();
     }
 
+    function isTabActive(tabId) {
+        const tab = document.getElementById(tabId);
+        return tab && tab.classList.contains('active');
+    }
+
     document.addEventListener('keydown', function(event) {
-        if (event.key !== 'Enter') return;
         const activeModal = document.querySelector('.modal-overlay.active');
-        if (!activeModal) return;
+        const activeModalExists = !!activeModal;
+
+        if (event.key === 'F2' && !activeModalExists && isTabActive('sales-tab')) {
+            event.preventDefault();
+            addSaleItemRow('課程');
+            return;
+        }
+
+        if (event.key === 'F3' && !activeModalExists && isTabActive('sales-tab')) {
+            event.preventDefault();
+            addSaleItemRow('商品');
+            return;
+        }
+
+        if (event.key === 'F4' && !activeModalExists) {
+            event.preventDefault();
+            if (isTabActive('sales-tab')) { saveSale(); return; }
+            if (isTabActive('expenses-tab')) { saveExpense(); return; }
+            if (isTabActive('products-tab')) { saveProductForm(); return; }
+            if (isTabActive('survey-tab')) { saveClientForm(); return; }
+        }
+
+        if (event.key !== 'Enter') return;
+        if (!activeModalExists) return;
         if (event.target.tagName === 'TEXTAREA' || event.target.tagName === 'BUTTON') return;
         const actionButton = activeModal.querySelector('button:not(.close-btn):not([disabled])');
         if (actionButton) {
