@@ -147,18 +147,23 @@
 
     /* 報表列印專屬樣式 */
     @media print {
+        @page { size: auto; margin: 10mm; }
+        html, body { margin: 0; padding: 0; background: white !important; color: #5C4E43 !important; }
         body * { visibility: hidden; }
         #report-print-modal, #report-print-modal * { visibility: visible; }
-        #report-print-modal { position: absolute; left: 0; top: 0; width: 100%; max-width: 100%; box-shadow: none; margin: 0; padding: 0; background: white; }
+        #report-print-modal { position: absolute; left: 0; top: 0; width: 100%; min-height: 100%; box-shadow: none; margin: 0; padding: 0; background: white !important; }
         .hide-on-print { display: none !important; }
-        
-        /* 修改這裡：加入縮小比例與寬度補償 */
-        .modal-content { max-height: none; overflow: visible; transform: scale(1); transform-origin: top left; width: 117%; }
-        .modal-overlay { position: absolute; background: none; align-items: flex-start; padding: 0; }
-        /* 強制表格邊框在列印時顯示更清晰 */
-        table { border: 1px solid #ddd; }
-        /* 修改這裡：加入 white-space: nowrap 讓文字不換行 */
-        th, td { border-bottom: 1px solid #ddd; white-space: nowrap; }
+        .modal-content { position: static !important; width: 100% !important; max-width: none !important; max-height: none !important; overflow: visible !important; transform: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 20px !important; background: white !important; color: #5C4E43 !important; }
+        .modal-overlay { position: static !important; background: transparent !important; align-items: stretch !important; padding: 0 !important; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+        table { border: 1px solid #EBE3DB !important; box-shadow: none !important; }
+        th, td { border-bottom: 1px solid #EBE3DB !important; white-space: normal !important; }
+        thead th { background-color: #EBE3DB !important; color: #8C6B52 !important; }
+        tr:hover td { background-color: transparent !important; }
+        .readonly-block, .total-display, .survey-card, .survey-section, .flex-row > div, .modal-content, .detail-row .detail-data {
+            background-color: inherit !important;
+            color: inherit !important;
+        }
     }
 
     /* --- 登入畫面與帳號管理美化 --- */
@@ -1150,7 +1155,7 @@
         return Math.max(totalDeposit - totalBalanceUsed, 0);
     }
 
-    function buildDetailedReport(title, saleFilterFn, expenseFilterFn, prepaidCutoffDate) {
+    function buildDetailedReport(title, saleFilterFn, expenseFilterFn, prepaidCutoffDate, maskLabel) {
         // --- 1. 處理銷售紀錄 ---
         let filteredSales = sales.filter(saleFilterFn).sort((a, b) => b.date.localeCompare(a.date));
         let totalActual = 0, totalCash = 0, totalLinePay = 0, totalRemittance = 0, totalFee = 0;
@@ -1195,6 +1200,7 @@
 
         // --- 3. 計算淨利 ---
         const totalPrepaid = getPrepaidBalanceAsOf(prepaidCutoffDate);
+        if (maskLabel === undefined || maskLabel === null) maskLabel = '本月贈送總面膜數';
         const totalMaskGifts = filteredSales.reduce((sum, s) => {
             return sum + ((s.items || []).reduce((sub, i) => sub + ((i.name === '🎁 面膜贈品') ? (i.qty || 0) : 0), 0));
         }, 0);
@@ -1222,11 +1228,9 @@
                     </div>
                 </div>
 
-                <!-- 總收支與淨利摘要：左側加入預收款框 -->
-                <div style="display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; align-items: stretch;">
-                    <div style="flex: 0 0 220px; min-width:160px; text-align: center; background: #FFFFFF; padding: 15px; border-radius: 12px; border: 2px solid #D4B895;">
-                        <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px; color: #6B5A4E;">📥 預收款餘額</div>
-                        <div style="font-size: 24px; font-weight: 900; color: #34495e;">$${totalPrepaid.toLocaleString()}</div>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: stretch;">
+                    <div style="flex: 1; min-width:160px; text-align: center; background: #FFFFFF; color: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(212, 184, 149, 0.3);">
+                        <div style="color: #6B5A4E; font-weight: bold; margin-bottom: 8px;">📥 預收款餘額</div><div style="color: #6B5A4E; font-size: 24px; font-weight: bold;">$${totalPrepaid.toLocaleString()}</div>
                     </div>
                     <div style="flex: 1; min-width:160px; text-align: center; background: #2ecc71; color: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);">
                         <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">✨ 銷售金額</div><div style="font-size: 24px; font-weight: bold;">$${totalActual.toLocaleString()}</div>
@@ -1234,7 +1238,9 @@
                     <div style="flex: 1; min-width:160px; text-align: center; background: #e74c3c; color: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);">
                         <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">📉 總支出金額</div><div style="font-size: 24px; font-weight: bold;">$${totalExpense.toLocaleString()}</div>
                     </div>
-                    <div style="flex: 1; min-width:160px; text-align: center; background: #D4B895; color: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(212, 184, 149, 0.3);">
+                </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; align-items: stretch;">
+                    <div style="flex: 1; min-width:220px; text-align: center; background: #D4B895; color: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(212, 184, 149, 0.3);">
                         <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">💰 淨利潤 (實收-支出)</div><div style="font-size: 24px; font-weight: bold;">$${netProfit.toLocaleString()}</div>
                     </div>
                 </div>
@@ -1242,7 +1248,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="color: #A68064; border-left: 4px solid #D4B895; padding-left: 10px; margin: 0;">🧾 詳細銷售紀錄</h3>
                     <div style="font-size: 14px; color: #6B5A4E;">
-                        本月贈送總面膜數：<strong>${totalMaskGifts} 片</strong>
+                        ${maskLabel}：<strong>${totalMaskGifts} 盒</strong>
                     </div>
                 </div>
                 <table style="width: 100%; border-collapse: collapse; font-size: 15px; margin-bottom: 30px;">
@@ -1267,7 +1273,8 @@
             `📅 ${d} 日結分析報表`, 
             s => s.date === d,          // 銷售過濾條件
             e => e.date === d,           // 支出過濾條件
-            d                           // 預收款截止日期
+            d,                          // 預收款截止日期
+            '本日贈送面膜數'          // 贈面膜標籤
         ); 
     }
 
@@ -1280,7 +1287,8 @@
             `📅 ${currentReportFilterMonth} 月結分析報表`, 
             s => s.date && s.date.startsWith(currentReportFilterMonth), // 銷售過濾條件
             e => e.date && e.date.startsWith(currentReportFilterMonth),  // 支出過濾條件
-            cutoff
+            cutoff,
+            '本月贈送面膜數'
         ); 
     }
 
