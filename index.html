@@ -1269,7 +1269,7 @@
         const totalMaskGifts = filteredSales.reduce((sum, s) => {
             return sum + ((s.items || []).reduce((sub, i) => sub + ((i.name === '🎁 面膜贈品') ? (i.qty || 0) : 0), 0));
         }, 0);
-        let netProfit = totalActual - totalExpense;
+        let netProfit = totalActual - totalExpense - totalFee;
 
         // --- 4. 產出報表 HTML ---
         let html = `
