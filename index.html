@@ -70,6 +70,7 @@
     .btn-secondary:hover { background-color: #d6cfd0; box-shadow: 0 5px 12px rgba(0,0,0,0.1); }
     .btn-info { background-color: #D0C3B6; color: #fff; }
     .btn-info:hover { background-color: #BFAFA0; box-shadow: 0 5px 12px rgba(208, 195, 182, 0.4); }
+    button:focus { outline: none !important; box-shadow: 0 5px 12px rgba(212, 184, 149, 0.3); }
     
     /* 橫向月份排列標籤 */
     .month-tags-container { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
@@ -258,14 +259,14 @@
                 <thead><tr><th>課程名稱</th><th style="width: 110px;">贈送課程</th><th style="width: 120px;">單價明細</th><th style="width: 100px;">數量</th><th style="width: 120px;">銷售金額</th><th style="width: 80px; text-align: center;">操作</th></tr></thead>
                 <tbody id="sale-course-items-body"></tbody>
             </table>
-            <button onclick="addSaleItemRow('課程')" class="btn-warning" style="margin-top: 10px; margin-bottom: 25px;">+ 新增課程</button>
+            <button onclick="addSaleItemRow('課程')" class="btn-warning" style="margin-top: 10px; margin-bottom: 25px;">+ 新增課程(F2)</button>
 
             <h3 style="color: #A68064;">銷售商品</h3>
             <table>
                 <thead><tr><th>產品名稱</th><th style="width: 120px;">單價明細</th><th style="width: 100px;">數量</th><th style="width: 120px;">銷售金額</th><th style="width: 80px; text-align: center;">操作</th></tr></thead>
                 <tbody id="sale-product-items-body"></tbody>
             </table>
-            <button onclick="addSaleItemRow('商品')" class="btn-warning" style="margin-top: 10px; margin-bottom: 20px;">+ 新增商品</button>
+            <button onclick="addSaleItemRow('商品')" class="btn-warning" style="margin-top: 10px; margin-bottom: 20px;">+ 新增商品(F8)</button>
         </div>
 
         <!-- 新增支付大標題 -->
@@ -321,7 +322,7 @@
             <div id="remaining-pay-container" class="total-display" style="font-size: 18px; padding: 12px; background: #FFF4E6; border: 1px dashed #E67E22; color: #D35400; display: none;">剩餘應收: <span id="sale-remaining-pay">0</span> 元</div>
             <div class="total-display" style="font-size: 22px; padding: 12px; background: #FAF5F0;">實收金額: <span id="sale-actual-pay">0</span> 元</div>
         </div>
-        <button id="sale-submit-btn" onclick="saveSale()">儲存</button>
+        <button id="sale-submit-btn" onclick="saveSale()">儲存(F4)</button>
         <button id="sale-cancel-btn" onclick="cancelSaleEdit()" class="btn-secondary" style="display: none; margin-left: 8px;">取消修改</button>
     </div>
 
@@ -348,7 +349,7 @@
             <div><label>金額</label><input type="number" id="expense-amount" class="no-spinners" min="0" placeholder="請輸入金額"></div>
             <div><label>備註</label><input type="text" id="expense-note" placeholder="可輸入費用細項"></div>
         </div>
-        <button id="expense-submit-btn" onclick="saveExpense()">新增支出</button><button id="expense-cancel-btn" onclick="cancelExpenseEdit()" class="btn-secondary" style="display: none; margin-left: 5px;">取消修改</button>
+        <button id="expense-submit-btn" onclick="saveExpense()">新增支出(F4)</button><button id="expense-cancel-btn" onclick="cancelExpenseEdit()" class="btn-secondary" style="display: none; margin-left: 5px;">取消修改</button>
 
         <h3 style="margin-top: 30px;">支出紀錄</h3>
         <label>選擇查看月份：</label><div id="expense-month-list" class="month-tags-container"></div>
@@ -418,7 +419,7 @@
             <div><label>非會員加購價</label><input type="number" id="product-non-member-addon-price" class="no-spinners" placeholder="若無請留空"></div>
             <div><label>會員加購價</label><input type="number" id="product-member-addon-price" class="no-spinners" placeholder="若無請留空"></div>
         </div>
-        <button id="product-submit-btn" onclick="saveProductForm()">新增產品</button><button id="product-cancel-btn" onclick="cancelProductEdit()" class="btn-secondary" style="display: none; margin-left: 5px;">取消修改</button>
+        <button id="product-submit-btn" onclick="saveProductForm()">新增產品(F4)</button><button id="product-cancel-btn" onclick="cancelProductEdit()" class="btn-secondary" style="display: none; margin-left: 5px;">取消修改</button>
 
         <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px;"><h3>產品列表</h3><button id="product-sort-btn" class="btn-secondary" onclick="toggleProductSort()">排序</button></div>
         <div style="overflow-x: auto;">
@@ -490,7 +491,7 @@
                     </div>
                 </div>
             </div>
-            <div style="text-align: center; margin-top: 30px;"><button id="client-submit-btn" onclick="saveClientForm()" style="font-size: 16px; padding: 14px 40px; border-radius: 30px;">✨ 提交表單</button><button id="client-cancel-btn" onclick="cancelClientEdit()" class="btn-secondary" style="display: none; margin-left: 15px; font-size: 16px; padding: 14px 30px; border-radius: 30px;">放棄修改</button></div>
+            <div style="text-align: center; margin-top: 30px;"><button id="client-submit-btn" onclick="saveClientForm()" style="font-size: 16px; padding: 14px 40px; border-radius: 30px;">✨ 提交表單(F4)</button><button id="client-cancel-btn" onclick="cancelClientEdit()" class="btn-secondary" style="display: none; margin-left: 15px; font-size: 16px; padding: 14px 30px; border-radius: 30px;">放棄修改</button></div>
         </div>
     </div>
 </div>
@@ -569,7 +570,7 @@
         </div>
         <!-- 加入 white-space: pre-wrap 讓 \n 能夠正常換行 -->
         <div id="custom-alert-message" style="font-size: 16px; color: #5C4E43; margin-bottom: 25px; line-height: 1.6; white-space: pre-wrap;"></div>
-        <button onclick="closeModal('custom-alert-modal')" style="width: 100%; padding: 12px; font-size: 16px; border-radius: 30px;">我知道了</button>
+        <button id="custom-alert-ok-btn" onclick="closeModal('custom-alert-modal')" style="width: 100%; padding: 12px; font-size: 16px; border-radius: 30px;">我知道了</button>
     </div>
 </div>
 
@@ -674,6 +675,11 @@
             document.getElementById('login-password').value = '';
 
             applyUserPermissions(); // 套用介面權限
+            // 登入後將 focus 移到提示視窗的「我知道了」按鈕，但不自動關閉視窗
+            setTimeout(() => {
+                const okBtn = document.getElementById('custom-alert-ok-btn');
+                if (okBtn) okBtn.focus();
+            }, 10);
         } else {
             showCustomAlert('❌ 帳號或密碼錯誤，請重新輸入！');
         }
@@ -2034,6 +2040,78 @@ function saveSale() {
         }
     });
     // 👆 =================================================== 👆
+
+    // --- 新增：F4 快捷鍵觸發主要提交動作 ---
+    window.addEventListener('keydown', function(event) {
+        if (event.key === 'F2' || event.key === 'F8') {
+            const activeTab = document.querySelector('.tab-content.active');
+            const activeModal = document.querySelector('.modal-overlay.active');
+            const loginOverlay = document.getElementById('login-overlay');
+            const isLoginVisible = loginOverlay && loginOverlay.style.display !== 'none';
+
+            if (isLoginVisible || activeModal) return;
+            if (activeTab && activeTab.id === 'sales-tab') {
+                event.preventDefault();
+                if (event.key === 'F2') {
+                    addSaleItemRow('課程');
+                } else {
+                    addSaleItemRow('商品');
+                }
+            }
+        }
+
+        if (event.key === 'F4') {
+            const activeModal = document.querySelector('.modal-overlay.active');
+            const loginOverlay = document.getElementById('login-overlay');
+            const isLoginVisible = loginOverlay && loginOverlay.style.display !== 'none';
+
+            if (isLoginVisible) {
+                event.preventDefault();
+                handleLogin();
+                return;
+            }
+
+            if (activeModal) {
+                const activeModalId = activeModal.id;
+                if (activeModalId === 'deposit-modal') {
+                    event.preventDefault();
+                    confirmDeposit();
+                    return;
+                }
+                if (activeModalId === 'custom-alert-modal') {
+                    event.preventDefault();
+                    const okBtn = document.getElementById('custom-alert-ok-btn');
+                    if (okBtn) okBtn.click();
+                    return;
+                }
+                if (activeModalId === 'account-modal') {
+                    const accSaveBtn = document.getElementById('acc-submit-btn');
+                    if (accSaveBtn) {
+                        event.preventDefault();
+                        accSaveBtn.click();
+                        return;
+                    }
+                }
+            }
+
+            const activeTab = document.querySelector('.tab-content.active');
+            if (!activeTab) return;
+
+            if (activeTab.id === 'sales-tab') {
+                event.preventDefault();
+                saveSale();
+            } else if (activeTab.id === 'expenses-tab') {
+                event.preventDefault();
+                saveExpense();
+            } else if (activeTab.id === 'products-tab') {
+                event.preventDefault();
+                saveProductForm();
+            } else if (activeTab.id === 'survey-tab') {
+                event.preventDefault();
+                saveClientForm();
+            }
+        }
+    });
 
     // --- 網頁載入時的登入狀態檢查 (避免重新整理後登出) ---
     window.addEventListener('DOMContentLoaded', () => {
