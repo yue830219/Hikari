@@ -259,14 +259,14 @@
                 <thead><tr><th>課程名稱</th><th style="width: 110px;">贈送課程</th><th style="width: 120px;">單價明細</th><th style="width: 100px;">數量</th><th style="width: 120px;">銷售金額</th><th style="width: 80px; text-align: center;">操作</th></tr></thead>
                 <tbody id="sale-course-items-body"></tbody>
             </table>
-            <button onclick="addSaleItemRow('課程')" class="btn-warning" style="margin-top: 10px; margin-bottom: 25px;">+ 新增課程(F2)</button>
+            <button onclick="addSaleItemRow('課程')" class="btn-warning" style="margin-top: 10px; margin-bottom: 25px;">+ 新增課程</button>
 
             <h3 style="color: #A68064;">銷售商品</h3>
             <table>
                 <thead><tr><th>產品名稱</th><th style="width: 120px;">單價明細</th><th style="width: 100px;">數量</th><th style="width: 120px;">銷售金額</th><th style="width: 80px; text-align: center;">操作</th></tr></thead>
                 <tbody id="sale-product-items-body"></tbody>
             </table>
-            <button onclick="addSaleItemRow('商品')" class="btn-warning" style="margin-top: 10px; margin-bottom: 20px;">+ 新增商品(F8)</button>
+            <button onclick="addSaleItemRow('商品')" class="btn-warning" style="margin-top: 10px; margin-bottom: 20px;">+ 新增商品</button>
         </div>
 
         <!-- 新增支付大標題 -->
@@ -322,7 +322,7 @@
             <div id="remaining-pay-container" class="total-display" style="font-size: 18px; padding: 12px; background: #FFF4E6; border: 1px dashed #E67E22; color: #D35400; display: none;">剩餘應收: <span id="sale-remaining-pay">0</span> 元</div>
             <div class="total-display" style="font-size: 22px; padding: 12px; background: #FAF5F0;">實收金額: <span id="sale-actual-pay">0</span> 元</div>
         </div>
-        <button id="sale-submit-btn" onclick="saveSale()">儲存(F4)</button>
+        <button id="sale-submit-btn" onclick="saveSale()">儲存</button>
         <button id="sale-cancel-btn" onclick="cancelSaleEdit()" class="btn-secondary" style="display: none; margin-left: 8px;">取消修改</button>
     </div>
 
@@ -349,7 +349,7 @@
             <div><label>金額</label><input type="number" id="expense-amount" class="no-spinners" min="0" placeholder="請輸入金額"></div>
             <div><label>備註</label><input type="text" id="expense-note" placeholder="可輸入費用細項"></div>
         </div>
-        <button id="expense-submit-btn" onclick="saveExpense()">新增支出(F4)</button><button id="expense-cancel-btn" onclick="cancelExpenseEdit()" class="btn-secondary" style="display: none; margin-left: 5px;">取消修改</button>
+        <button id="expense-submit-btn" onclick="saveExpense()">新增支出</button><button id="expense-cancel-btn" onclick="cancelExpenseEdit()" class="btn-secondary" style="display: none; margin-left: 5px;">取消修改</button>
 
         <h3 style="margin-top: 30px;">支出紀錄</h3>
         <label>選擇查看月份：</label><div id="expense-month-list" class="month-tags-container"></div>
@@ -419,7 +419,7 @@
             <div><label>非會員加購價</label><input type="number" id="product-non-member-addon-price" class="no-spinners" placeholder="若無請留空"></div>
             <div><label>會員加購價</label><input type="number" id="product-member-addon-price" class="no-spinners" placeholder="若無請留空"></div>
         </div>
-        <button id="product-submit-btn" onclick="saveProductForm()">新增產品(F4)</button><button id="product-cancel-btn" onclick="cancelProductEdit()" class="btn-secondary" style="display: none; margin-left: 5px;">取消修改</button>
+        <button id="product-submit-btn" onclick="saveProductForm()">新增產品</button><button id="product-cancel-btn" onclick="cancelProductEdit()" class="btn-secondary" style="display: none; margin-left: 5px;">取消修改</button>
 
         <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px;"><h3>產品列表</h3><button id="product-sort-btn" class="btn-secondary" onclick="toggleProductSort()">排序</button></div>
         <div style="overflow-x: auto;">
@@ -491,7 +491,7 @@
                     </div>
                 </div>
             </div>
-            <div style="text-align: center; margin-top: 30px;"><button id="client-submit-btn" onclick="saveClientForm()" style="font-size: 16px; padding: 14px 40px; border-radius: 30px;">✨ 提交表單(F4)</button><button id="client-cancel-btn" onclick="cancelClientEdit()" class="btn-secondary" style="display: none; margin-left: 15px; font-size: 16px; padding: 14px 30px; border-radius: 30px;">放棄修改</button></div>
+            <div style="text-align: center; margin-top: 30px;"><button id="client-submit-btn" onclick="saveClientForm()" style="font-size: 16px; padding: 14px 40px; border-radius: 30px;">✨ 提交表單</button><button id="client-cancel-btn" onclick="cancelClientEdit()" class="btn-secondary" style="display: none; margin-left: 15px; font-size: 16px; padding: 14px 30px; border-radius: 30px;">放棄修改</button></div>
         </div>
     </div>
 </div>
@@ -675,11 +675,6 @@
             document.getElementById('login-password').value = '';
 
             applyUserPermissions(); // 套用介面權限
-            // 登入後將 focus 移到提示視窗的「我知道了」按鈕，但不自動關閉視窗
-            setTimeout(() => {
-                const okBtn = document.getElementById('custom-alert-ok-btn');
-                if (okBtn) okBtn.focus();
-            }, 10);
         } else {
             showCustomAlert('❌ 帳號或密碼錯誤，請重新輸入！');
         }
@@ -740,7 +735,7 @@
             // 其餘帳號隱藏該區塊，只保留 Modal 下方的登出按鈕
             document.getElementById('admin-only-section').style.display = 'none';
         }
-        document.getElementById('account-modal').classList.add('active');
+        openModal('account-modal');
     }
 
     function renderAccounts() {
@@ -890,8 +885,45 @@
     // 觸發自訂提示視窗的函數
     function showCustomAlert(message) {
         document.getElementById('custom-alert-message').textContent = message;
-        document.getElementById('custom-alert-modal').classList.add('active');
+        openModal('custom-alert-modal');
     }
+
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.classList.add('active');
+        requestAnimationFrame(() => focusModalFirstButton(modalId));
+    }
+
+    function focusModalFirstButton(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        const visibleButtons = Array.from(modal.querySelectorAll('button:not(.close-btn):not([disabled])')).filter(btn => {
+            const style = window.getComputedStyle(btn);
+            return style.visibility !== 'hidden' && style.display !== 'none';
+        });
+        if (visibleButtons.length) {
+            visibleButtons[0].focus();
+            return;
+        }
+        const fallbackButtons = Array.from(modal.querySelectorAll('button')).filter(btn => {
+            const style = window.getComputedStyle(btn);
+            return style.visibility !== 'hidden' && style.display !== 'none';
+        });
+        if (fallbackButtons.length) fallbackButtons[0].focus();
+    }
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key !== 'Enter') return;
+        const activeModal = document.querySelector('.modal-overlay.active');
+        if (!activeModal) return;
+        if (event.target.tagName === 'TEXTAREA' || event.target.tagName === 'BUTTON') return;
+        const actionButton = activeModal.querySelector('button:not(.close-btn):not([disabled])');
+        if (actionButton) {
+            event.preventDefault();
+            actionButton.click();
+        }
+    });
 
     function generateId(prefix) { return prefix + '_' + Date.now().toString() + '_' + Math.random().toString(36).substr(2, 5); }
 
@@ -981,7 +1013,7 @@
         document.getElementById('deposit-transfer').value = '0';
         document.getElementById('deposit-line').value = '0';
         document.getElementById('deposit-date')._flatpickr.setDate(new Date());
-        document.getElementById('deposit-modal').classList.add('active');
+        openModal('deposit-modal');
     }
 
     function confirmDeposit() {
@@ -1269,7 +1301,7 @@
                 </table>
             </div>`;
         document.getElementById('report-print-body').innerHTML = html;
-        document.getElementById('report-print-modal').classList.add('active');
+        openModal('report-print-modal');
     }
 
     function generateDailyReport() { 
@@ -1452,7 +1484,7 @@
         const c = clients[index]; if(!c) return;
         document.getElementById('detail-name').textContent = c.name || '未填寫'; document.getElementById('detail-gender').textContent = c.gender || '未提供'; document.getElementById('detail-member').textContent = c.isMember ? '👑 會員' : '一般客戶'; document.getElementById('detail-balance').textContent = '$' + (c.balance !== undefined ? c.balance : 0); document.getElementById('detail-free-classes').textContent = c.freeClasses !== undefined ? c.freeClasses : 0;
         document.getElementById('detail-birthday').textContent = c.birthday || '未填寫'; document.getElementById('detail-occupation').textContent = c.occupation || '未填寫'; document.getElementById('detail-phone').textContent = c.phone || '未填寫'; document.getElementById('detail-address').textContent = c.address || '未填寫'; document.getElementById('detail-allergy').textContent = c.allergy || '無紀錄'; document.getElementById('detail-skin').textContent = (c.skinConditions && c.skinConditions.length > 0) ? c.skinConditions.join('、') : '無紀錄'; document.getElementById('detail-lifestyle').textContent = (c.lifestyle && c.lifestyle.length > 0) ? c.lifestyle.join('、') : '無紀錄';
-        document.getElementById('client-modal').classList.add('active');
+        openModal('client-modal');
     }
     function toggleClientSort() {
         isClientSorting = !isClientSorting; 
@@ -2040,78 +2072,6 @@ function saveSale() {
         }
     });
     // 👆 =================================================== 👆
-
-    // --- 新增：F4 快捷鍵觸發主要提交動作 ---
-    window.addEventListener('keydown', function(event) {
-        if (event.key === 'F2' || event.key === 'F8') {
-            const activeTab = document.querySelector('.tab-content.active');
-            const activeModal = document.querySelector('.modal-overlay.active');
-            const loginOverlay = document.getElementById('login-overlay');
-            const isLoginVisible = loginOverlay && loginOverlay.style.display !== 'none';
-
-            if (isLoginVisible || activeModal) return;
-            if (activeTab && activeTab.id === 'sales-tab') {
-                event.preventDefault();
-                if (event.key === 'F2') {
-                    addSaleItemRow('課程');
-                } else {
-                    addSaleItemRow('商品');
-                }
-            }
-        }
-
-        if (event.key === 'F4') {
-            const activeModal = document.querySelector('.modal-overlay.active');
-            const loginOverlay = document.getElementById('login-overlay');
-            const isLoginVisible = loginOverlay && loginOverlay.style.display !== 'none';
-
-            if (isLoginVisible) {
-                event.preventDefault();
-                handleLogin();
-                return;
-            }
-
-            if (activeModal) {
-                const activeModalId = activeModal.id;
-                if (activeModalId === 'deposit-modal') {
-                    event.preventDefault();
-                    confirmDeposit();
-                    return;
-                }
-                if (activeModalId === 'custom-alert-modal') {
-                    event.preventDefault();
-                    const okBtn = document.getElementById('custom-alert-ok-btn');
-                    if (okBtn) okBtn.click();
-                    return;
-                }
-                if (activeModalId === 'account-modal') {
-                    const accSaveBtn = document.getElementById('acc-submit-btn');
-                    if (accSaveBtn) {
-                        event.preventDefault();
-                        accSaveBtn.click();
-                        return;
-                    }
-                }
-            }
-
-            const activeTab = document.querySelector('.tab-content.active');
-            if (!activeTab) return;
-
-            if (activeTab.id === 'sales-tab') {
-                event.preventDefault();
-                saveSale();
-            } else if (activeTab.id === 'expenses-tab') {
-                event.preventDefault();
-                saveExpense();
-            } else if (activeTab.id === 'products-tab') {
-                event.preventDefault();
-                saveProductForm();
-            } else if (activeTab.id === 'survey-tab') {
-                event.preventDefault();
-                saveClientForm();
-            }
-        }
-    });
 
     // --- 網頁載入時的登入狀態檢查 (避免重新整理後登出) ---
     window.addEventListener('DOMContentLoaded', () => {
