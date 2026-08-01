@@ -357,8 +357,9 @@
         <h2>每月收支總表</h2>
         <label>選擇查看月份：</label><div id="report-month-list" class="month-tags-container"></div>
         <div class="flex-row" style="margin-top: 25px; gap: 20px;">
-            <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px;"><label style="font-size: 16px; margin-bottom: 10px;">總收入 (實收)</label><span id="report-income" style="color: #2ecc71; font-size: 32px;">$0</span></div>
+            <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px;"><label style="font-size: 16px; margin-bottom: 10px;">銷售金額</label><span id="report-income" style="color: #2ecc71; font-size: 32px;">$0</span></div>
             <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px;"><label style="font-size: 16px; margin-bottom: 10px;">店面支出</label><span id="report-expense" style="color: #e74c3c; font-size: 32px;">$0</span></div>
+            <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px;"><label style="font-size: 16px; margin-bottom: 10px;">預收款項餘額</label><span id="report-prepaid" style="color: #34495e; font-size: 32px;">$0</span></div>
             <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px;"><label style="font-size: 16px; margin-bottom: 10px;">Line Pay 手續費</label><span id="report-line-fee" style="color: #e67e22; font-size: 32px;">$0</span></div>
             <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px; background-color: #FAF5F0; border-color: #D4B895; border-width: 2px;"><label style="font-size: 16px; margin-bottom: 10px;">本月淨利潤</label><span id="report-profit" style="color: #8C6B52; font-size: 36px; font-weight: 900;">$0</span></div>
         </div>
@@ -530,6 +531,7 @@
     <div class="modal-content">
         <div class="modal-header"><h3>💰 客戶儲值</h3><button class="close-btn" onclick="closeModal('deposit-modal')">&times;</button></div>
         <div class="form-group"><label style="font-size: 18px;">儲值客戶：<span id="deposit-client-name" style="color: #8C6B52; font-weight: bold;"></span></label></div>
+        <div class="form-group"><label>儲值日期</label><input type="text" id="deposit-date" class="date-picker" placeholder="請選擇日期..." readonly></div>
         <div class="flex-row">
             <div><label>💵 現金</label><input type="number" id="deposit-cash" class="no-spinners" value="0" min="0" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value==='') this.value='0';"></div>
             <div><label>🏦 匯款轉帳</label><input type="number" id="deposit-transfer" class="no-spinners" value="0" min="0" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value==='') this.value='0';"></div>
@@ -889,9 +891,29 @@
     }
 
     let datePickers = flatpickr(".date-picker", { locale: "zh_tw", dateFormat: "Y-m-d", disableMobile: "true" });
+    const syncDateFields = ['sale-date', 'expense-date', 'report-daily-date', 'deposit-date'];
+    function syncTransactionDates(sourceId, dateValue) {
+        if (!dateValue) return;
+        syncDateFields.forEach(id => {
+            if (id === sourceId) return;
+            const el = document.getElementById(id);
+            if (el && el._flatpickr) {
+                el._flatpickr.setDate(dateValue, false);
+            }
+        });
+    }
+    syncDateFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', function () {
+                syncTransactionDates(this.id, this.value);
+            });
+        }
+    });
     document.getElementById('sale-date')._flatpickr.setDate(new Date());
     document.getElementById('expense-date')._flatpickr.setDate(new Date());
     document.getElementById('report-daily-date')._flatpickr.setDate(new Date());
+    document.getElementById('deposit-date')._flatpickr.setDate(new Date());
 
     let clients = [], products = [], sales = [], expenses = [];
     let users = JSON.parse(localStorage.getItem('users')) || [];
@@ -947,17 +969,20 @@
         document.getElementById('deposit-cash').value = '0';
         document.getElementById('deposit-transfer').value = '0';
         document.getElementById('deposit-line').value = '0';
+        document.getElementById('deposit-date')._flatpickr.setDate(new Date());
         document.getElementById('deposit-modal').classList.add('active');
     }
 
     function confirmDeposit() {
         if(currentDepositClientIndex === -1) return;
         const c = clients[currentDepositClientIndex];
+        const depositDate = document.getElementById('deposit-date').value;
         const cash = parseInt(document.getElementById('deposit-cash').value) || 0;
         const transfer = parseInt(document.getElementById('deposit-transfer').value) || 0;
         const line = parseInt(document.getElementById('deposit-line').value) || 0;
         const amount = cash + transfer + line;
 
+        if (!depositDate) return showCustomAlert('請選擇儲值日期！');
         if (amount <= 0) return showCustomAlert('請輸入大於0的有效儲值總金額！');
         
         c.balance = (c.balance || 0) + amount;
@@ -966,7 +991,7 @@
         if (amount >= 3000 && !c.isMember) {
             c.isMember = true;
             c.isMemberByDeposit = true;
-            upgradeMsg += `\n🎉 單筆儲值滿 $${amount}，已自動幫客戶升級為 VIP 會員！`;
+            upgradeMsg += `\n🎉 單筆儲值滿 $${amount}，已自動升級為 VIP 會員！`;
         }
         
         // --- 新增：儲值滿額贈送課程邏輯 ---
@@ -989,32 +1014,37 @@
         if (line > 0) methods.push('Line Pay');
         let paymentMethodStr = methods.join(' + ');
 
-        const todayStr = new Date().toISOString().split('T')[0];
         const depositSaleRecord = {
             id: generateId('sal'),
-            date: todayStr,
+            date: depositDate,
             clientName: c.name,
             isMember: c.isMember,
+            type: 'deposit',
             items: [{ name: "💰 儲值金儲值", qty: 1, price: amount }],
             discount: 0,
             total: amount,
-            paidByBalance: 0,       
+            paidByBalance: 0,
             paidByActual: amount,
             paymentMethod: paymentMethodStr,
             paymentFeeRate: 0,
             paymentFee: 0,
-            paymentBreakdown: { cash, transfer, line }
+            paymentBreakdown: { cash, transfer, line },
+            note: amount >= 10000 ? '儲值滿 10000 贈送面膜' : ''
         };
+
+        if (amount >= 10000) {
+            depositSaleRecord.items.push({ name: '🎁 面膜贈品', qty: 1, price: 0 });
+        }
         
         sales.push(depositSaleRecord);
         syncWithGoogle('insert', 'sales', depositSaleRecord);
         
-        saveData(); // 確保您有這個 function，否則請保留您原本儲存的邏輯
+        saveData();
         renderClients();
         updateSaleDropdowns();
         syncWithGoogle('update', 'clients', c);
         closeModal('deposit-modal');
-        showCustomAlert(`✨ 儲值成功！\n客戶：${c.name}\n本次儲值：$${amount}\n目前儲值餘額：$${c.balance}${upgradeMsg}\n\n📝 此儲值已自動建立實收收入紀錄！`);
+        showCustomAlert(`✨ 儲值成功！\n客戶：${c.name}\n本次儲值：$${amount}\n目前儲值餘額：$${c.balance}${upgradeMsg}\n\n📝 此儲值為預收款，尚未認列當日收入。`);
     }
 
     // --- 支出管理 ---
@@ -1087,36 +1117,69 @@
     
     function renderReport() {
         let totalIncome = 0, totalExpense = 0, totalLineFee = 0;
-        sales.forEach(s => { if(s && s.date && s.date.startsWith(currentReportFilterMonth)) { totalIncome += (s.paidByActual !== undefined ? s.paidByActual : (s.total || 0)); if (s.paymentFee) totalLineFee += s.paymentFee; } });
+        sales.forEach(s => { if(s && s.date && s.date.startsWith(currentReportFilterMonth) && s.type !== 'deposit') { totalIncome += (s.total !== undefined ? s.total : 0); if (s.paymentFee) totalLineFee += s.paymentFee; } });
         expenses.forEach(e => { if(e && e.date && e.date.startsWith(currentReportFilterMonth)) totalExpense += e.amount || 0; });
-        document.getElementById('report-income').textContent = '$' + totalIncome.toLocaleString(); document.getElementById('report-expense').textContent = '$' + totalExpense.toLocaleString(); document.getElementById('report-line-fee').textContent = '$' + totalLineFee.toLocaleString();
+        const [year, month] = currentReportFilterMonth.split('-').map(Number);
+        const lastDay = new Date(year, month, 0).getDate();
+        const cutoff = `${currentReportFilterMonth}-${String(lastDay).padStart(2, '0')}`;
+        const totalPrepaid = getPrepaidBalanceAsOf(cutoff);
+        document.getElementById('report-income').textContent = '$' + totalIncome.toLocaleString();
+        document.getElementById('report-expense').textContent = '$' + totalExpense.toLocaleString();
+        document.getElementById('report-prepaid').textContent = '$' + totalPrepaid.toLocaleString();
+        document.getElementById('report-line-fee').textContent = '$' + totalLineFee.toLocaleString();
         document.getElementById('report-profit').textContent = '$' + (totalIncome - totalExpense - totalLineFee).toLocaleString();
     }
 
-    function buildDetailedReport(title, saleFilterFn, expenseFilterFn) {
+    function getPrepaidBalanceAsOf(cutoffDateStr) {
+        if (!cutoffDateStr) return 0;
+        const cutoff = new Date(cutoffDateStr + 'T23:59:59');
+        let totalDeposit = 0, totalBalanceUsed = 0;
+        sales.forEach(s => {
+            if (!s || !s.date) return;
+            const saleDate = new Date(s.date + 'T00:00:00');
+            if (saleDate <= cutoff) {
+                const isDepositRecord = s.type === 'deposit' || (s.items && s.items.some(i => i.name === '💰 儲值金儲值'));
+                if (isDepositRecord) {
+                    const depositAmount = s.total || (s.items || []).reduce((sum, item) => item.name === '💰 儲值金儲值' ? sum + item.price : sum, 0);
+                    totalDeposit += depositAmount;
+                } else {
+                    totalBalanceUsed += s.paidByBalance || 0;
+                }
+            }
+        });
+        return Math.max(totalDeposit - totalBalanceUsed, 0);
+    }
+
+    function buildDetailedReport(title, saleFilterFn, expenseFilterFn, prepaidCutoffDate) {
         // --- 1. 處理銷售紀錄 ---
         let filteredSales = sales.filter(saleFilterFn).sort((a, b) => b.date.localeCompare(a.date));
         let totalActual = 0, totalCash = 0, totalLinePay = 0, totalRemittance = 0, totalFee = 0;
         let tableRows = '';
 
         filteredSales.forEach(s => {
-            let actual = s.paidByActual || 0;
-            let fee = s.paymentFee || 0;
+            const isDeposit = s.type === 'deposit';
+            let actual = isDeposit ? 0 : (s.total || 0);
+            let fee = isDeposit ? 0 : (s.paymentFee || 0);
             totalActual += actual; totalFee += fee;
             
+            // 把所有銷售紀錄的付款明細（包含儲值類型）都累加到收款方式統計
             if (s.paymentBreakdown) {
                 totalCash += s.paymentBreakdown.cash || 0;
                 totalRemittance += s.paymentBreakdown.transfer || 0;
                 totalLinePay += s.paymentBreakdown.line || 0;
             } else {
-                let method = s.paymentMethod || '現金';
-                if (method.includes('Line Pay')) totalLinePay += actual;
-                else if (method.includes('匯款')) totalRemittance += actual;
-                else totalCash += actual;
+                // 若沒有 breakdown，只有非儲值的舊紀錄才用 paymentMethod 的 paidByActual 做 fallback
+                if (!isDeposit) {
+                    let method = s.paymentMethod || '現金';
+                    if (method.includes('Line Pay')) totalLinePay += s.paidByActual || 0;
+                    else if (method.includes('匯款')) totalRemittance += s.paidByActual || 0;
+                    else totalCash += s.paidByActual || 0;
+                }
             }
 
             let itemsText = s.items.map(i => `${i.name} (x${i.qty})`).join('<br>');
-            tableRows += `<tr><td style="text-align: center;">${s.date}</td><td style="font-weight: bold;">${s.clientName}</td><td>${itemsText}</td><td style="color: #2ecc71; font-weight: bold; text-align: right;">$${actual.toLocaleString()}</td><td style="text-align: center;">${s.paymentMethod || '現金'}</td><td style="color: #e74c3c; text-align: right;">${fee > 0 ? '-$'+fee : '-'}</td></tr>`;
+            let prepaidAmount = isDeposit ? (s.total || 0) : 0;
+            tableRows += `<tr><td style="text-align: center;">${s.date}</td><td style="font-weight: bold;">${s.clientName}</td><td>${itemsText}</td><td style="color: #3498db; font-weight: bold; text-align: right;">$${prepaidAmount.toLocaleString()}</td><td style="color: #2ecc71; font-weight: bold; text-align: right;">$${actual.toLocaleString()}</td><td style="text-align: center;">${s.paymentMethod || '現金'}</td><td style="color: #e74c3c; text-align: right;">${fee > 0 ? '-$'+fee : '-'}</td></tr>`;
         });
 
         // --- 2. 處理支出紀錄 ---
@@ -1131,33 +1194,42 @@
         });
 
         // --- 3. 計算淨利 ---
+        const totalPrepaid = getPrepaidBalanceAsOf(prepaidCutoffDate);
+        const totalMaskGifts = filteredSales.reduce((sum, s) => {
+            return sum + ((s.items || []).reduce((sub, i) => sub + ((i.name === '🎁 面膜贈品') ? (i.qty || 0) : 0), 0));
+        }, 0);
         let netProfit = totalActual - totalExpense;
 
         // --- 4. 產出報表 HTML ---
         let html = `
             <div style="padding: 20px;">
                 <h2 style="text-align:center; color:#8C6B52; margin-bottom: 30px; font-size: 28px;">${title}</h2>
+                <!-- 預收款總額（已整合到下方摘要） -->
                 
                 <!-- 收款方式明細 -->
                 <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
                     <div style="flex: 1; min-width:120px; text-align: center; background: #FAF5F0; padding: 15px; border-radius: 12px; border: 1px dashed #D4B895;">
-                        <div style="color: #6B5A4E; font-weight: bold; margin-bottom: 8px;">💵 現金總收</div><div style="font-size: 20px; font-weight: bold;">$${totalCash.toLocaleString()}</div>
+                        <div style="color: #6B5A4E; font-weight: bold; margin-bottom: 8px;">💵 現金收入</div><div style="font-size: 20px; font-weight: bold;">$${totalCash.toLocaleString()}</div>
                     </div>
                     <div style="flex: 1; min-width:120px; text-align: center; background: #FAF5F0; padding: 15px; border-radius: 12px; border: 1px dashed #D4B895;">
-                        <div style="color: #6B5A4E; font-weight: bold; margin-bottom: 8px;">🏦 匯款總收</div><div style="font-size: 20px; font-weight: bold;">$${totalRemittance.toLocaleString()}</div>
+                        <div style="color: #6B5A4E; font-weight: bold; margin-bottom: 8px;">🏦 匯款收入</div><div style="font-size: 20px; font-weight: bold;">$${totalRemittance.toLocaleString()}</div>
                     </div>
                     <div style="flex: 1; min-width:120px; text-align: center; background: #FAF5F0; padding: 15px; border-radius: 12px; border: 1px dashed #D4B895;">
-                        <div style="color: #6B5A4E; font-weight: bold; margin-bottom: 8px;">📱 Line Pay總收</div><div style="font-size: 20px; font-weight: bold;">$${totalLinePay.toLocaleString()}</div>
+                        <div style="color: #6B5A4E; font-weight: bold; margin-bottom: 8px;">📱 Line Pay收入</div><div style="font-size: 20px; font-weight: bold;">$${totalLinePay.toLocaleString()}</div>
                     </div>
                     <div style="flex: 1; min-width:120px; text-align: center; background: #FFFFFF; padding: 15px; border-radius: 12px; border: 1px dashed #DDCBC0;">
                         <div style="color: #e74c3c; font-weight: bold; margin-bottom: 8px;">扣除手續費</div><div style="font-size: 20px; font-weight: bold; color: #e74c3c;">$${totalFee.toLocaleString()}</div>
                     </div>
                 </div>
 
-                <!-- 總收支與淨利摘要 -->
-                <div style="display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap;">
+                <!-- 總收支與淨利摘要：左側加入預收款框 -->
+                <div style="display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; align-items: stretch;">
+                    <div style="flex: 0 0 220px; min-width:160px; text-align: center; background: #FFFFFF; padding: 15px; border-radius: 12px; border: 2px solid #D4B895;">
+                        <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px; color: #6B5A4E;">📥 預收款餘額</div>
+                        <div style="font-size: 24px; font-weight: 900; color: #34495e;">$${totalPrepaid.toLocaleString()}</div>
+                    </div>
                     <div style="flex: 1; min-width:160px; text-align: center; background: #2ecc71; color: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);">
-                        <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">✨ 總實收金額</div><div style="font-size: 24px; font-weight: bold;">$${totalActual.toLocaleString()}</div>
+                        <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">✨ 銷售金額</div><div style="font-size: 24px; font-weight: bold;">$${totalActual.toLocaleString()}</div>
                     </div>
                     <div style="flex: 1; min-width:160px; text-align: center; background: #e74c3c; color: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);">
                         <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">📉 總支出金額</div><div style="font-size: 24px; font-weight: bold;">$${totalExpense.toLocaleString()}</div>
@@ -1167,10 +1239,15 @@
                     </div>
                 </div>
 
-                <h3 style="color: #A68064; border-left: 4px solid #D4B895; padding-left: 10px; margin-bottom: 15px;">🧾 詳細銷售紀錄</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: #A68064; border-left: 4px solid #D4B895; padding-left: 10px; margin: 0;">🧾 詳細銷售紀錄</h3>
+                    <div style="font-size: 14px; color: #6B5A4E;">
+                        本月贈送總面膜數：<strong>${totalMaskGifts} 片</strong>
+                    </div>
+                </div>
                 <table style="width: 100%; border-collapse: collapse; font-size: 15px; margin-bottom: 30px;">
-                    <thead><tr style="background-color: #EBE3DB; color: #8C6B52;"><th style="padding: 12px; text-align: center; width: 15%;">日期</th><th style="padding: 12px; text-align: left; width: 15%;">客戶名稱</th><th style="padding: 12px; text-align: left; width: 30%;">消費內容</th><th style="padding: 12px; text-align: right; width: 15%;">實收金額</th><th style="padding: 12px; text-align: center; width: 15%;">付款方式</th><th style="padding: 12px; text-align: right; width: 10%;">手續費</th></tr></thead>
-                    <tbody>${tableRows || '<tr><td colspan="6" style="text-align:center; padding: 30px; color:#999;">該期間尚無銷售紀錄</td></tr>'}</tbody>
+                    <thead><tr style="background-color: #EBE3DB; color: #8C6B52;"><th style="padding: 12px; text-align: center; width: 14%;">日期</th><th style="padding: 12px; text-align: left; width: 12%;">客戶名稱</th><th style="padding: 12px; text-align: left; width: 26%;">消費內容</th><th style="padding: 12px; text-align: right; width: 12%;">預收款項</th><th style="padding: 12px; text-align: right; width: 12%;">實收金額</th><th style="padding: 12px; text-align: center; width: 15%;">付款方式</th><th style="padding: 12px; text-align: right; width: 11%;">手續費</th></tr></thead>
+                    <tbody>${tableRows || '<tr><td colspan="7" style="text-align:center; padding: 30px; color:#999;">該期間尚無銷售紀錄</td></tr>'}</tbody>
                 </table>
 
                 <h3 style="color: #c0392b; border-left: 4px solid #f5b7b1; padding-left: 10px; margin-bottom: 15px;">💸 詳細支出紀錄</h3>
@@ -1189,16 +1266,21 @@
         buildDetailedReport(
             `📅 ${d} 日結分析報表`, 
             s => s.date === d,          // 銷售過濾條件
-            e => e.date === d           // 支出過濾條件
+            e => e.date === d,           // 支出過濾條件
+            d                           // 預收款截止日期
         ); 
     }
 
     function generateMonthlyReport() { 
         if (!currentReportFilterMonth) return showCustomAlert('請先選擇月份'); 
+        const [year, month] = currentReportFilterMonth.split('-').map(Number);
+        const lastDay = new Date(year, month, 0).getDate();
+        const cutoff = `${currentReportFilterMonth}-${String(lastDay).padStart(2, '0')}`;
         buildDetailedReport(
             `📅 ${currentReportFilterMonth} 月結分析報表`, 
             s => s.date && s.date.startsWith(currentReportFilterMonth), // 銷售過濾條件
-            e => e.date && e.date.startsWith(currentReportFilterMonth)  // 支出過濾條件
+            e => e.date && e.date.startsWith(currentReportFilterMonth),  // 支出過濾條件
+            cutoff
         ); 
     }
 
@@ -1742,11 +1824,15 @@ function saveSale() {
         const saleRecord = { 
             id: targetId, date, clientName: client.name, isMember: currentIsMember, items, 
             discount, total, paidByBalance: useBalance, paidByActual: actualPay,
-            paymentMethod: paymentMethodStr, paymentFeeRate, paymentFee,
+            paymentMethod: paymentMethodStr,
             paymentBreakdown: { cash: payCash, transfer: payTransfer, line: payLine },
             freeClassesDeducted: totalFreeClassesDeducted, // 💡【新增】儲存本次扣除的課程數到銷售紀錄中
             note: saleNote // 💡【新增】儲存備註到銷售紀錄
         };
+        if (payLine > 0) {
+            saleRecord.paymentFeeRate = paymentFeeRate;
+            saleRecord.paymentFee = paymentFee;
+        }
         
         if (editingSaleIndex === -1) { sales.push(saleRecord); syncWithGoogle('insert', 'sales', saleRecord); } 
         else { sales[editingSaleIndex] = saleRecord; syncWithGoogle('update', 'sales', saleRecord); cancelSaleEdit(); }
@@ -1797,17 +1883,30 @@ function saveSale() {
                     if (category === '課程') courseItems.push(itemText); else productItems.push(itemText); 
                 });
                 
-                let payDetailHtml = `<strong>總計: $${sale.total || 0}</strong>`;
-                if (sale.paidByBalance > 0) payDetailHtml += `<br><small style="color:#8C6B52;">儲值折抵: -$${sale.paidByBalance}</small>`;
-                
-                if (sale.paymentBreakdown) {
-                    if (sale.paymentBreakdown.line > 0) { payDetailHtml += `<br><small style="color:#2ecc71; font-weight:bold;">📱 Line Pay: $${sale.paymentBreakdown.line}</small>`; if (sale.paymentFee > 0) payDetailHtml += `<br><small style="color:#e67e22;">(被扣手續費: -$${sale.paymentFee})</small>`; }
-                    if (sale.paymentBreakdown.transfer > 0) { payDetailHtml += `<br><small style="color:#8C6B52; font-weight:bold;">🏦 匯款: $${sale.paymentBreakdown.transfer}</small>`; }
-                    if (sale.paymentBreakdown.cash > 0) { payDetailHtml += `<br><small style="color:#2ecc71; font-weight:bold;">💵 收現: $${sale.paymentBreakdown.cash}</small>`; }
+                const isDeposit = sale.type === 'deposit' || (sale.items && sale.items.some(i => i.name === "💰 儲值金儲值"));
+                let payDetailHtml = '';
+                if (isDeposit) {
+                    // 顯示儲值的支付方式與金額，例如：預收款(現金)
+                    const pb = sale.paymentBreakdown || {};
+                    const parts = [];
+                    if (pb.cash && pb.cash > 0) parts.push(`現金: $${pb.cash}`);
+                    if (pb.transfer && pb.transfer > 0) parts.push(`匯款: $${pb.transfer}`);
+                    if (pb.line && pb.line > 0) parts.push(`Line Pay: $${pb.line}`);
+                    const methodLabel = parts.length > 0 ? parts.join(' + ') : (sale.paymentMethod || '');
+                    payDetailHtml = `<strong>預收款${methodLabel ? '(' + methodLabel + ')' : ''}</strong>`;
                 } else {
-                    if (sale.paymentMethod === 'Line Pay') { payDetailHtml += `<br><small style="color:#2ecc71; font-weight:bold;">📱 Line Pay: $${sale.paidByActual || 0}</small>`; if(sale.paymentFee > 0) payDetailHtml += `<br><small style="color:#e67e22;">(被扣手續費: -$${sale.paymentFee})</small>`; } 
-                    else if (sale.paymentMethod === '匯款') { payDetailHtml += `<br><small style="color:#8C6B52; font-weight:bold;">🏦 匯款: $${sale.paidByActual || 0}</small>`; } 
-                    else { payDetailHtml += `<br><small style="color:#2ecc71; font-weight:bold;">💵 收現: $${sale.paidByActual || 0}</small>`; }
+                    payDetailHtml = `<strong>總計: $${sale.total || 0}</strong>`;
+                    if (sale.paidByBalance > 0) payDetailHtml += `<br><small style="color:#8C6B52;">儲值折抵: -$${sale.paidByBalance}</small>`;
+
+                    if (sale.paymentBreakdown) {
+                        if (sale.paymentBreakdown.line > 0) { payDetailHtml += `<br><small style="color:#2ecc71; font-weight:bold;">📱 Line Pay: $${sale.paymentBreakdown.line}</small>`; if (sale.paymentFee > 0) payDetailHtml += `<br><small style="color:#e67e22;">(被扣手續費: -$${sale.paymentFee})</small>`; }
+                        if (sale.paymentBreakdown.transfer > 0) { payDetailHtml += `<br><small style="color:#8C6B52; font-weight:bold;">🏦 匯款: $${sale.paymentBreakdown.transfer}</small>`; }
+                        if (sale.paymentBreakdown.cash > 0) { payDetailHtml += `<br><small style="color:#2ecc71; font-weight:bold;">💵 收現: $${sale.paymentBreakdown.cash}</small>`; }
+                    } else {
+                        if (sale.paymentMethod === 'Line Pay') { payDetailHtml += `<br><small style="color:#2ecc71; font-weight:bold;">📱 Line Pay: $${sale.paidByActual || 0}</small>`; if(sale.paymentFee > 0) payDetailHtml += `<br><small style="color:#e67e22;">(被扣手續費: -$${sale.paymentFee})</small>`; } 
+                        else if (sale.paymentMethod === '匯款') { payDetailHtml += `<br><small style="color:#8C6B52; font-weight:bold;">🏦 匯款: $${sale.paidByActual || 0}</small>`; } 
+                        else { payDetailHtml += `<br><small style="color:#2ecc71; font-weight:bold;">💵 收現: $${sale.paidByActual || 0}</small>`; }
+                    }
                 }
 
                 // 如果紀錄中有備註，在付款細節下方顯示出來
@@ -1815,8 +1914,7 @@ function saveSale() {
                     payDetailHtml += `<br><small style="color:#666; background:#f5f5f5; padding:2px 4px; border-radius:3px; display:inline-block; margin-top:4px;">📝 備註: ${sale.note}</small>`;
                 }
 
-                const isDeposit = sale.items && sale.items.some(i => i.name === "💰 儲值金儲值");
-                const editButtonHtml = isDeposit ? `<button class="btn-warning" style="opacity: 0.6; cursor: not-allowed;" onclick="showCustomAlert('☕ 儲值紀錄無法直接修改。\\\\n若金額有誤，請點選「刪除」後重新至「客戶管理」中進行儲值。')">修改</button>` : `<button class="btn-warning" onclick="startEditSale(${sale.originalIndex})">修改</button>`;
+                const editButtonHtml = isDeposit ? `<button class="btn-warning" style="opacity: 0.6; cursor: not-allowed;" onclick="showCustomAlert('☕ 儲值紀錄無法直接修改。若金額有誤，請點選「刪除」後重新至「客戶管理」中進行儲值。')">修改</button>` : `<button class="btn-warning" onclick="startEditSale(${sale.originalIndex})">修改</button>`;
                 tbody.innerHTML += `<tr><td>${sale.date || '-'}</td><td><strong>${sale.clientName || '未知客戶'}</strong><br><small style="color:#999">${sale.isMember ? '會員價' : '一般價'}</small></td><td>${courseItems.length > 0 ? courseItems.join('<br>') : '-'}</td><td>${productItems.length > 0 ? productItems.join('<br>') : '-'}</td><td>$${sale.discount || 0}</td><td>${payDetailHtml}</td><td class="action-cell">${editButtonHtml}<button class="btn-danger" onclick="deleteSale(${sale.originalIndex}, this)">刪除</button></td></tr>`; 
             }
         });
