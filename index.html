@@ -365,7 +365,7 @@
         <div class="flex-row" style="margin-top: 25px; gap: 20px;">
             <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px;"><label style="font-size: 16px; margin-bottom: 10px;">銷售金額</label><span id="report-income" style="color: #2ecc71; font-size: 32px;">$0</span></div>
             <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px;"><label style="font-size: 16px; margin-bottom: 10px;">店面支出</label><span id="report-expense" style="color: #e74c3c; font-size: 32px;">$0</span></div>
-            <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px;"><label style="font-size: 16px; margin-bottom: 10px;">預收款項餘額</label><span id="report-prepaid" style="color: #34495e; font-size: 32px;">$0</span></div>
+            <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px;"><label style="font-size: 16px; margin-bottom: 10px;">累計預收款餘額</label><span id="report-prepaid" style="color: #34495e; font-size: 32px;">$0</span></div>
             <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px;"><label style="font-size: 16px; margin-bottom: 10px;">Line Pay 手續費</label><span id="report-line-fee" style="color: #e67e22; font-size: 32px;">$0</span></div>
             <div class="readonly-block" style="flex-direction: column; text-align: center; padding: 25px; background-color: #FAF5F0; border-color: #D4B895; border-width: 2px;"><label style="font-size: 16px; margin-bottom: 10px;">本月淨利潤</label><span id="report-profit" style="color: #8C6B52; font-size: 36px; font-weight: 900;">$0</span></div>
         </div>
@@ -566,7 +566,7 @@
 <div class="modal-overlay hide-on-print" id="custom-alert-modal" onclick="closeModalOnBg(event, 'custom-alert-modal')" style="z-index: 3000;">
     <div class="modal-content" style="max-width: 400px; text-align: center; padding: 30px 20px;">
         <div style="margin-bottom: 20px;">
-            <h3 style="margin: 0; color: #8C6B52; border-left: none; padding-left: 0; font-size: 24px;">🔔 系統提示</h3>
+            <h3 id="custom-alert-title" style="margin: 0; color: #8C6B52; border-left: none; padding-left: 0; font-size: 24px;">🔔 系統提示</h3>
         </div>
         <!-- 加入 white-space: pre-wrap 讓 \n 能夠正常換行 -->
         <div id="custom-alert-message" style="font-size: 16px; color: #5C4E43; margin-bottom: 25px; line-height: 1.6; white-space: pre-wrap;"></div>
@@ -675,6 +675,7 @@
             document.getElementById('login-password').value = '';
 
             applyUserPermissions(); // 套用介面權限
+            showMotivationQuote();
         } else {
             showCustomAlert('❌ 帳號或密碼錯誤，請重新輸入！');
         }
@@ -883,8 +884,78 @@
     }
 
     // 觸發自訂提示視窗的函數
-    function showCustomAlert(message) {
-        document.getElementById('custom-alert-message').textContent = message;
+    const motivationalQuotes = [
+        '王芸恩寶寶，妳是最棒的，我會一直陪在妳身邊，加油加油加油！',
+        '站了一整天真的很累，但看到作品完成那一刻的成就感，一切都值得。',
+        '允許自己偶爾電量耗盡，好好休息後，我依然是那個閃閃發光的魔法師。',
+        '遇到挑剔的聲音不是挫折，而是讓我功力大增的磨刀石。',
+        '雙手的長繭與痠痛，是我努力為夢想奮鬥的最美勳章。',
+        '遇到瓶頸只是大腦在提醒我：該休息一下，準備迎接下一個突破了。',
+        '把每一次挑戰當作升級打怪，跨過去，我就又強大了一點。',
+        '照顧別人的美麗之前，今天也要記得好好擁抱、疼愛辛苦的自己。',
+        '我的雙手擁有改變的魔力，今天也要百分之百相信自己的專業。',
+        '不要懷疑自己，我已經比昨天那個努力練習的自己更優秀了。',
+        '客人的讚美是獎勵，但我對自己的肯定，才是真正支撐我前進的動力。',
+        '我的技術與美感就是我最大的底氣，任何人都拿不走。',
+        '就算現在還不夠完美也沒關係，我正穩穩地走在通往頂尖的路上。',
+        '我的價值不只建立在業績上，更在於我對這份職業的堅持與付出。',
+        '每一道破繭而出的光芒，都來自無人知曉的默默扎根，我一定挺得住！',
+        '就算遇到低潮，也要記得我曾讓無數人笑著找回自信。',
+        '不要和別人比較起點，只要專注於自己每天進步的幅度。',
+        '記住當初踏入美容業的初心，我是為了創造美好而存在的。',
+        '專注在眼前的每一個細節，因為我正在一點一滴雕刻自己的夢想藍圖。',
+        '每一次的疲憊，都是技術更加精進的印記，我的努力不會白費。',
+        '深呼吸，抬起頭，我是最棒的，今天我也能創造出無可取代的美麗！',
+        '就算今天遇到再難搞的狀況，我也有能力用專業和從容去化解。',
+        '允許自己偶爾有負面情緒，消化完之後，我依然是那個無堅不摧的我。',
+        '身體的疲勞只是一時的，但我用雙手創造出來的美麗與成就感，會真實地留下來。',
+        '別怕犯錯或撞牆，每一次的微調，都是讓我技術更趨近完美的必經之路。',
+        '我不需要逼自己時時刻刻完美，只要今天的我比昨天進步一點點，就很棒了。',
+        '在這個充滿競爭的行業裡，我最堅強的後盾，就是我那顆不輕易認輸的心。',
+        '偶爾覺得快撐不下去很正常，深呼吸，給自己五分鐘放空，然後繼續閃耀。',
+        '我的雙手不僅能為別人創造美，更能為自己創造無限的可能性。',
+        '我不是在做一份日復一日的工作，我是在經營一份讓人變幸福的事業。',
+        '客人照鏡子那瞬間驚喜的眼神，就是對我今天所有辛勞最頂級的犒賞。',
+        '相信自己累積下來的審美觀，我的獨特美感是任何機器與AI都無法取代的。',
+        '只要我還握著工具、站在工作崗位上，我就是這個空間裡最棒的藝術家。',
+        '別忘了，我是那個能把平凡化為驚豔、讓黯淡重新發光的魔法使者。',
+        '別人眼中的理所當然，是我用無數個痠痛的日夜換來的，我絕對值得所有的讚美。',
+        '那些看似枯燥乏味的重複練習，終將鋪成我走向頂尖大師的紅毯。',
+        '今天的咬牙堅持與辛苦，都是為了明天能擁有更多拒絕與選擇的自由。',
+        '不要被一時的業績或客流量定義價值，我紮實的技術和口碑才是長久閃耀的黃金。',
+        '勇敢擁抱新的技術與挑戰，我的潛力沒有天花板，永遠沒有極限。',
+        '把專注力拉回自己身上，持續讓自己發光，對的客人自然會被我的頻率吸引。',
+        '結束今天的工作前，記得在心裡給自己熱烈的掌聲：今天撐過去的你，真的非常了不起！'
+    ];
+
+    let motivationShown = false;
+
+    function getRandomMotivationalQuote() {
+        return motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+    }
+
+    function showMotivationQuote() {
+        if (motivationShown) return;
+        const loginOverlay = document.getElementById('login-overlay');
+        if (loginOverlay && loginOverlay.style.display !== 'none') return;
+        motivationShown = true;
+        showCustomAlert('每日精神語錄', getRandomMotivationalQuote());
+    }
+
+    function showCustomAlert(titleOrMessage, message) {
+        const titleEl = document.getElementById('custom-alert-title');
+        let title = '🔔 系統提示';
+        let body = '';
+
+        if (message === undefined) {
+            body = titleOrMessage || '';
+        } else {
+            title = titleOrMessage || title;
+            body = message || '';
+        }
+
+        if (titleEl) titleEl.textContent = title;
+        document.getElementById('custom-alert-message').textContent = body;
         openModal('custom-alert-modal');
     }
 
@@ -1075,6 +1146,10 @@
         if (bonusClasses > 0) {
             c.freeClasses = (c.freeClasses || 0) + bonusClasses;
             upgradeMsg += `\n🎁 贈送 ${bonusClasses} 堂免費課程！(目前共 ${c.freeClasses} 堂)`;
+        }
+
+        if (amount >= 10000) {
+            upgradeMsg += `\n🎁 贈送面膜 1 份！`;
         }
         // ---------------------------------
         
@@ -1295,7 +1370,7 @@
 
                 <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: stretch;">
                     <div style="flex: 1; min-width:160px; text-align: center; background: #FFFFFF; color: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(212, 184, 149, 0.3);">
-                        <div style="color: #6B5A4E; font-weight: bold; margin-bottom: 8px;">📥 預收款餘額</div><div style="color: #6B5A4E; font-size: 24px; font-weight: bold;">$${totalPrepaid.toLocaleString()}</div>
+                        <div style="color: #6B5A4E; font-weight: bold; margin-bottom: 8px;">📥 累計預收款餘額</div><div style="color: #6B5A4E; font-size: 24px; font-weight: bold;">$${totalPrepaid.toLocaleString()}</div>
                     </div>
                     <div style="flex: 1; min-width:160px; text-align: center; background: #2ecc71; color: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);">
                         <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">✨ 銷售金額</div><div style="font-size: 24px; font-weight: bold;">$${totalActual.toLocaleString()}</div>
@@ -1318,13 +1393,13 @@
                 </div>
                 <table style="width: 100%; border-collapse: collapse; font-size: 15px; margin-bottom: 30px;">
                     <thead><tr style="background-color: #EBE3DB; color: #8C6B52;"><th style="padding: 12px; text-align: center; width: 14%;">日期</th><th style="padding: 12px; text-align: left; width: 12%;">客戶名稱</th><th style="padding: 12px; text-align: left; width: 26%;">消費內容</th><th style="padding: 12px; text-align: right; width: 12%;">預收款項</th><th style="padding: 12px; text-align: right; width: 12%;">實收金額</th><th style="padding: 12px; text-align: center; width: 15%;">付款方式</th><th style="padding: 12px; text-align: right; width: 11%;">手續費</th></tr></thead>
-                    <tbody>${tableRows || '<tr><td colspan="7" style="text-align:center; padding: 30px; color:#999;">該期間尚無銷售紀錄</td></tr>'}</tbody>
+                    <tbody>${tableRows ? `${tableRows}<tr style="background-color:#F8EFE5; font-weight:bold; cursor: default; border-top: 2px solid #D9C7AA;"><td colspan="3" style="padding: 14px; text-align:right; background-color:#F8EFE5;">合計：</td><td style="padding: 14px; text-align:right; color:#3498db; background-color:#F8EFE5;">$${filteredSales.reduce((sum, s) => sum + (s.type === 'deposit' ? (s.total || 0) : 0), 0).toLocaleString()}</td><td style="padding: 14px; text-align:right; color:#2ecc71; background-color:#F8EFE5;">$${totalActual.toLocaleString()}</td><td style="padding: 14px; text-align:center; background-color:#F8EFE5;">&nbsp;</td><td style="padding: 14px; text-align:right; color:#e74c3c; background-color:#F8EFE5;">-${totalFee.toLocaleString()}</td></tr>` : '<tr><td colspan="7" style="text-align:center; padding: 30px; color:#999;">該期間尚無銷售紀錄</td></tr>'}</tbody>
                 </table>
 
                 <h3 style="color: #c0392b; border-left: 4px solid #f5b7b1; padding-left: 10px; margin-bottom: 15px;">💸 詳細支出紀錄</h3>
                 <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
                     <thead><tr style="background-color: #fdedec; color: #c0392b;"><th style="padding: 12px; text-align: center; width: 15%;">日期</th><th style="padding: 12px; text-align: left; width: 25%;">支出類別</th><th style="padding: 12px; text-align: left; width: 45%;">備註明細</th><th style="padding: 12px; text-align: right; width: 15%;">支出金額</th></tr></thead>
-                    <tbody>${expenseTableRows || '<tr><td colspan="4" style="text-align:center; padding: 30px; color:#999;">該期間尚無支出紀錄</td></tr>'}</tbody>
+                    <tbody>${expenseTableRows ? `${expenseTableRows}<tr style="background-color:#F8EFE5; font-weight:bold; cursor: default; border-top: 2px solid #D9C7AA;"><td colspan="3" style="padding: 14px; text-align:right; background-color:#F8EFE5;">合計：</td><td style="padding: 14px; text-align:right; color:#c0392b; background-color:#F8EFE5;">$${totalExpense.toLocaleString()}</td></tr>` : '<tr><td colspan="4" style="text-align:center; padding: 30px; color:#999;">該期間尚無支出紀錄</td></tr>'}</tbody>
                 </table>
             </div>`;
         document.getElementById('report-print-body').innerHTML = html;
@@ -1424,7 +1499,7 @@
         }
         
         editingClientIndex = -1; 
-        document.getElementById('client-submit-btn').textContent = '✨ 提交表單'; 
+        document.getElementById('client-submit-btn').textContent = '✨ 提交表單(F4)'; 
         document.getElementById('client-cancel-btn').style.display = 'none';
         clearClientForm(); // 清空並重新鎖定欄位
         saveData(); 
@@ -2107,6 +2182,7 @@ function saveSale() {
             currentUser = JSON.parse(savedUser);
             document.getElementById('login-overlay').style.display = 'none'; 
             applyUserPermissions(); 
+            showMotivationQuote();
         }
     });
 
@@ -2114,6 +2190,7 @@ function saveSale() {
     window.onload = async function() {
         if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("請在此貼上")) {
             console.warn("尚未設定 GOOGLE_SCRIPT_URL");
+            showMotivationQuote();
             return;
         }
 
@@ -2154,6 +2231,8 @@ function saveSale() {
         } catch (error) {
             console.error("Fetch 錯誤:", error);
         }
+
+        showMotivationQuote();
     };  
 
 </script>
