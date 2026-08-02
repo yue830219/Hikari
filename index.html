@@ -649,6 +649,7 @@
 
     // 2. 登入邏輯與登出系統
     let currentUser = null; // 儲存當前登入者資訊
+    let pendingPostLoginQuote = false;
 
     function handleLogin() {
         const unInput = document.getElementById('login-username').value.trim();
@@ -675,7 +676,7 @@
             document.getElementById('login-password').value = '';
 
             applyUserPermissions(); // 套用介面權限
-            showMotivationQuote();
+            pendingPostLoginQuote = true;
         } else {
             showCustomAlert('❌ 帳號或密碼錯誤，請重新輸入！');
         }
@@ -1084,7 +1085,13 @@
     function getCheckedValues(containerId) { return Array.from(document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`)).map(cb => cb.value); }
     function setCheckedValues(containerId, valuesArray) { document.querySelectorAll(`#${containerId} input[type="checkbox"]`).forEach(cb => cb.checked = (valuesArray || []).includes(cb.value)); }
 
-    function closeModal(modalId) { document.getElementById(modalId).classList.remove('active'); }
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+        if (modalId === 'custom-alert-modal' && pendingPostLoginQuote) {
+            pendingPostLoginQuote = false;
+            setTimeout(showMotivationQuote, 200);
+        }
+    }
     function closeModalOnBg(event, modalId) { if (event.target.id === modalId) closeModal(modalId); }
 
     function switchTab(tabId, btn) {
