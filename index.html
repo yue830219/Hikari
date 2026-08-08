@@ -24,6 +24,18 @@
     /* 主容器 */
     .container { max-width: 80%; margin: 20px auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 30px rgba(212, 184, 149, 0.3); }
     
+    /* 手機裝置時版面最大化 */
+    @media (max-width: 768px) {
+        .container {
+            max-width: 180%;
+            width: 180%;
+            margin: 0;
+            border-radius: 0;
+            padding: 20px;
+            box-shadow: none;
+        }
+    }
+    
     /* 頁籤美化 */
     .tabs { display: flex; gap: 8px; border-bottom: 2px solid #EBE3DB; margin-bottom: 25px; padding-bottom: 5px; flex-wrap: wrap; }
     .tab { padding: 12px 24px; cursor: pointer; border: none; background: none; font-size: 16px; font-weight: bold; color: #998675; border-radius: 8px; transition: all 0.3s; }
@@ -109,6 +121,7 @@
     /* 小視窗 Modal 樣式 */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
     .modal-overlay.active { display: flex; }
+    body.modal-open { overflow: hidden !important; position: fixed; width: 100%; touch-action: none; }
     .modal-content { background: white; padding: 30px; border-radius: 16px; width: 90%; max-width: 550px; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #EBE3DB; padding-bottom: 15px; margin-bottom: 20px; }
     .modal-header h3 { margin: 0; padding: 0; border: none; color: #8C6B52; }
@@ -197,9 +210,118 @@
             border-color: #DDD3CB !important;
             cursor: not-allowed;
         }
+                /* --- 螢幕旋轉提示告警 (白底鎖定精緻版) --- */
+        
+        /* 預設隱藏告警畫面 */
+        #orientation-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #ffffff; /* 純白底 */
+            color: #5C4E43; /* 系統主文字咖啡色 */
+            z-index: 99999; /* 蓋在最上面 */
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-family: 'Segoe UI', Arial, 微軟正黑體, sans-serif;
+            touch-action: none; /* 完全鎖定遮罩層的觸控行為 */
+        }
+        
+        .warning-content {
+            padding: 30px;
+            max-width: 320px;
+        }
+        
+        .warning-content h2 {
+            color: #8C6B52; /* 系統大標題顏色 */
+            font-weight: bold;
+            font-size: 24px;
+            margin-bottom: 12px;
+            margin-top: 0;
+            border: none !important; /* 確保不套用系統 h2 的左框線 */
+            padding: 0 !important;
+        }
+        
+        .warning-content p {
+            color: #998675; /* 次要文字顏色 */
+            font-size: 15px;
+            line-height: 1.6;
+            margin: 0;
+        }
+        
+        /* --- 精緻手機旋轉圖示動畫 --- */
+        .phone-rotate-container {
+            display: inline-block;
+            width: 100px;
+            height: 100px;
+            margin-bottom: 25px;
+        }
+        
+        .modern-rotate-icon {
+            width: 100%;
+            height: 100%;
+            color: #A68064; /* 手機外框拿鐵色 */
+            /* 核心動畫：手機本體旋轉 */
+            animation: elegant-phone-rotate 3.5s infinite ease-in-out;
+        }
+        
+        /* 讓箭頭顏色更突出 (系統金黃色) */
+        .modern-rotate-icon .arrow-path {
+            stroke: #D4B895 !important;
+        }
+        
+        /* 動態：手機優雅旋轉並縮放 */
+        @keyframes elegant-phone-rotate {
+            0% { transform: rotate(0deg) scale(1); opacity: 1; }
+            5% { transform: rotate(0deg) scale(1.05); opacity: 1; } /* 準備旋轉的前置微放 */
+            45% { transform: rotate(-90deg) scale(1.05); opacity: 1; } /* 優雅轉至橫向 */
+            60% { transform: rotate(-90deg) scale(1.05); opacity: 1; } /* 停留橫向 */
+            90% { transform: rotate(0deg) scale(1); opacity: 0.8; } /* 快速轉回 */
+            100% { transform: rotate(0deg) scale(1); opacity: 1; } /* 回到起點 */
+        }
+        
+        /* 關鍵：手機直立時觸發顯示 */
+        @media screen and (max-width: 768px) and (orientation: portrait) {
+            #orientation-warning {
+                display: flex; /* 顯示畫面 */
+                pointer-events: auto; /* 遮罩層本體可運作以擋住下方點擊 */
+            }
+            
+            body {
+                overflow: hidden !important; /* 強制鎖定底層捲軸 */
+                pointer-events: none !important; /* 強制底層所有點擊癱瘓 */
+            }
+        }
+        
 </style>
 </head>
 <body>
+    
+<!-- 直式螢幕旋轉提示 (更換好看圖示與白底鎖定版) -->
+<div id="orientation-warning">
+    <div class="warning-content">
+        <!-- 精緻的 CSS 手機旋轉圖示 wrapper -->
+        <div class="phone-rotate-container">
+            <svg class="modern-rotate-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- 手機外框 -->
+                <rect x="5" y="2" width="14" height="20" rx="3" stroke="currentColor" stroke-width="1.5"/>
+                <!-- 螢幕內部區域 -->
+                <rect x="7" y="4" width="10" height="13" rx="1" fill="currentColor" opacity="0.1"/>
+                <!-- 底部按鈕 -->
+                <circle cx="12" cy="19.5" r="1" fill="currentColor"/>
+                <!-- 頂部聽筒 -->
+                <path d="M10 2.5H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <!-- 旋轉箭頭 -->
+                <path class="arrow-path" d="M16 17C18.2091 17 20 15.2091 20 13C20 10.7909 18.2091 9 16 9C14.7176 9 13.5826 9.60156 12.8454 10.54M12 9V11H14" stroke="#D4B895" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <h2>請將螢幕轉至橫行</h2>
+        <p>為確保完整的操作體驗，請解鎖畫面旋轉，<br>並將手機轉至橫向瀏覽，謝謝！</p>
+    </div>
+</div>
 
 <!-- 登入畫面 Overlay -->
 <div class="login-overlay" id="login-overlay">
@@ -943,6 +1065,9 @@
         showCustomAlert('每日精神語錄', getRandomMotivationalQuote());
     }
 
+    let modalOpenCount = 0;
+    let bodyScrollTop = 0;
+
     function showCustomAlert(titleOrMessage, message) {
         const titleEl = document.getElementById('custom-alert-title');
         let title = '🔔 系統提示';
@@ -960,10 +1085,26 @@
         openModal('custom-alert-modal');
     }
 
+    function lockBodyScroll() {
+        bodyScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+        document.body.style.top = `-${bodyScrollTop}px`;
+        document.body.classList.add('modal-open');
+    }
+
+    function unlockBodyScroll() {
+        document.body.classList.remove('modal-open');
+        document.body.style.top = '';
+        window.scrollTo(0, bodyScrollTop);
+    }
+
     function openModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
         modal.classList.add('active');
+        if (modalOpenCount === 0) {
+            lockBodyScroll();
+        }
+        modalOpenCount += 1;
         requestAnimationFrame(() => focusModalFirstButton(modalId));
     }
 
@@ -1086,7 +1227,13 @@
     function setCheckedValues(containerId, valuesArray) { document.querySelectorAll(`#${containerId} input[type="checkbox"]`).forEach(cb => cb.checked = (valuesArray || []).includes(cb.value)); }
 
     function closeModal(modalId) {
-        document.getElementById(modalId).classList.remove('active');
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.classList.remove('active');
+        modalOpenCount = Math.max(0, modalOpenCount - 1);
+        if (modalOpenCount === 0) {
+            unlockBodyScroll();
+        }
         if (modalId === 'custom-alert-modal' && pendingPostLoginQuote) {
             pendingPostLoginQuote = false;
             setTimeout(showMotivationQuote, 200);
