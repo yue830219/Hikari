@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hikari-studio-v1';
+const CACHE_NAME = 'hikari-studio-v4';
 const APP_SHELL = [
   './',
   './index.html',

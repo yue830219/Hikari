@@ -9,8 +9,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Hikari">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="https://github.io">
-<link rel="icon" type="image/png" href="https://github.io">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="apple-touch-icon-precomposed" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="512x512" href="favicon.png">
@@ -681,7 +679,17 @@
         <div class="flex-row">
             <div><label>💵 現金</label><input type="number" id="deposit-cash" class="no-spinners" value="0" min="0" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value==='') this.value='0';"></div>
             <div><label>🏦 匯款轉帳</label><input type="number" id="deposit-transfer" class="no-spinners" value="0" min="0" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value==='') this.value='0';"></div>
-            <div><label>📱 Line Pay</label><input type="number" id="deposit-line" class="no-spinners" value="0" min="0" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value==='') this.value='0';"></div>
+            <div><label>📱 Line Pay</label><input type="number" id="deposit-line" class="no-spinners" value="0" min="0" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value==='') this.value='0'; updateDepositFee();" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateDepositFee();"></div>
+        </div>
+        <div class="flex-row" id="deposit-line-fee-container" style="display: none; margin-bottom: 15px; background: #FAF5F0; padding: 15px; border-radius: 8px;">
+            <div>
+                <label>Line Pay 手續費率 (%)</label>
+                <input type="number" id="deposit-line-pay-rate" value="2.13" step="0.01" min="0" oninput="updateDepositFee()">
+            </div>
+            <div>
+                <label>衍生手續費 (店內吸收)</label>
+                <input type="text" id="deposit-fee-amount" readonly style="background-color: transparent; color: #e74c3c; font-weight: bold; border: none;">
+            </div>
         </div>
         <button onclick="confirmDeposit()" style="width: 100%; margin-top: 25px; padding: 14px; font-size: 16px;">確認儲值</button>
     </div>
@@ -711,6 +719,20 @@
         <!-- 加入 white-space: pre-wrap 讓 \n 能夠正常換行 -->
         <div id="custom-alert-message" style="font-size: 16px; color: #5C4E43; margin-bottom: 25px; line-height: 1.6; white-space: pre-wrap;"></div>
         <button id="custom-alert-ok-btn" onclick="closeModal('custom-alert-modal')" style="width: 100%; padding: 12px; font-size: 16px; border-radius: 30px;">我知道了</button>
+    </div>
+</div>
+
+<!-- 離線資料恢復連線後的同步確認 Modal -->
+<div class="modal-overlay hide-on-print" id="offline-sync-modal" style="z-index: 3100;">
+    <div class="modal-content" style="max-width: 430px; text-align: center; padding: 30px 20px;">
+        <div style="margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #8C6B52; border-left: none; padding-left: 0; font-size: 24px;">☁️ 發現離線新增紀錄</h3>
+        </div>
+        <div id="offline-sync-message" style="font-size: 16px; color: #5C4E43; margin-bottom: 25px; line-height: 1.7; white-space: pre-wrap;"></div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-secondary" onclick="declineOfflineUpload()" style="flex: 1; padding: 12px; font-size: 16px; border-radius: 30px;">稍後再說</button>
+            <button id="offline-sync-upload-btn" onclick="confirmOfflineUpload()" style="flex: 1; padding: 12px; font-size: 16px; border-radius: 30px;">上傳至雲端</button>
+        </div>
     </div>
 </div>
 
@@ -1185,11 +1207,122 @@
 
     function generateId(prefix) { return prefix + '_' + Date.now().toString() + '_' + Math.random().toString(36).substr(2, 5); }
 
+    const OFFLINE_SYNC_QUEUE_KEY = 'hikariOfflineSyncQueue';
+    let offlineSyncPromptOpen = false;
+    let offlineUploadInProgress = false;
+
+    function getOfflineSyncQueue() {
+        try {
+            const queue = JSON.parse(localStorage.getItem(OFFLINE_SYNC_QUEUE_KEY)) || [];
+            return Array.isArray(queue) ? queue : [];
+        } catch (error) {
+            console.error('離線同步佇列讀取失敗:', error);
+            return [];
+        }
+    }
+
+    function saveOfflineSyncQueue(queue) {
+        localStorage.setItem(OFFLINE_SYNC_QUEUE_KEY, JSON.stringify(queue));
+    }
+
+    function queueOfflineSync(action, dataType, record) {
+        const queue = getOfflineSyncQueue();
+        const recordId = record && record.id ? record.id : '';
+        const existingIndex = queue.findIndex(item => item.action === action && item.dataType === dataType && item.recordId === recordId);
+        const queuedItem = {
+            queueId: generateId('sync'), action, dataType, recordId, data: record,
+            queuedAt: new Date().toISOString()
+        };
+        if (existingIndex >= 0) queue[existingIndex] = queuedItem;
+        else queue.push(queuedItem);
+        saveOfflineSyncQueue(queue);
+        return queue.length;
+    }
+
+    async function postGoogleSync(action, dataType, record) {
+        const payload = { action, dataType, data: record };
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST', body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    }
+
     function syncWithGoogle(action, dataType, record) {
         if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("請在此貼上")) return;
-        const payload = { action: action, dataType: dataType, data: record };
-        fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(err => console.error("Google 同步失敗:", err));
+        if (!navigator.onLine) {
+            queueOfflineSync(action, dataType, record);
+            return;
+        }
+        postGoogleSync(action, dataType, record).catch(error => {
+            queueOfflineSync(action, dataType, record);
+            console.error('Google 同步失敗，已保留於本機待稍後上傳:', error);
+        });
     }
+
+    function getOfflineInsertSummary(queue) {
+        const labels = { sales: '銷售', expenses: '支出', clients: '客戶', products: '產品', users: '帳號' };
+        const counts = {};
+        queue.filter(item => item.action === 'insert').forEach(item => {
+            const label = labels[item.dataType] || item.dataType;
+            counts[label] = (counts[label] || 0) + 1;
+        });
+        const summary = Object.entries(counts).map(([label, count]) => `${label} ${count} 筆`).join('、');
+        return summary || `共 ${queue.length} 項待同步變更`;
+    }
+
+    function promptOfflineUploadIfNeeded() {
+        const queue = getOfflineSyncQueue();
+        if (!navigator.onLine || queue.length === 0 || offlineSyncPromptOpen || offlineUploadInProgress) return false;
+        offlineSyncPromptOpen = true;
+        document.getElementById('offline-sync-message').textContent = `網路已恢復，本機尚有 ${getOfflineInsertSummary(queue)}。\n\n是否立即上傳最新紀錄至雲端？`;
+        openModal('offline-sync-modal');
+        return true;
+    }
+
+    function declineOfflineUpload() {
+        offlineSyncPromptOpen = false;
+        closeModal('offline-sync-modal');
+        showCustomAlert('資料仍安全保留在本機，系統會在下次恢復網路或重新開啟網頁時再次詢問。');
+    }
+
+    async function confirmOfflineUpload() {
+        if (offlineUploadInProgress) return;
+        const uploadButton = document.getElementById('offline-sync-upload-btn');
+        offlineUploadInProgress = true;
+        uploadButton.disabled = true;
+        uploadButton.textContent = '上傳中…';
+        const queue = getOfflineSyncQueue();
+        const failedItems = [];
+
+        for (let index = 0; index < queue.length; index += 1) {
+            const item = queue[index];
+            try {
+                await postGoogleSync(item.action, item.dataType, item.data);
+            } catch (error) {
+                failedItems.push(...queue.slice(index));
+                console.error('離線資料上傳失敗:', error);
+                break;
+            }
+        }
+
+        saveOfflineSyncQueue(failedItems);
+        offlineUploadInProgress = false;
+        offlineSyncPromptOpen = false;
+        uploadButton.disabled = false;
+        uploadButton.textContent = '上傳至雲端';
+        closeModal('offline-sync-modal');
+
+        if (failedItems.length === 0) {
+            showCustomAlert('☁️ 雲端同步完成', `已成功上傳 ${queue.length} 項本機紀錄。`);
+        } else {
+            showCustomAlert('⚠️ 上傳尚未完成', `目前仍有 ${failedItems.length} 項紀錄保留在本機，請確認網路後再試一次。`);
+        }
+    }
+
+    window.addEventListener('online', () => {
+        window.setTimeout(promptOfflineUploadIfNeeded, 500);
+    });
 
     let datePickers = flatpickr(".date-picker", { locale: "zh_tw", dateFormat: "Y-m-d", disableMobile: "true" });
     const syncDateFields = ['sale-date', 'expense-date', 'report-daily-date', 'deposit-date'];
@@ -1276,12 +1409,22 @@
 
     // --- 客戶多重儲值管理 ---
     let currentDepositClientIndex = -1;
+    function updateDepositFee() {
+        const lineAmount = parseInt(document.getElementById('deposit-line').value) || 0;
+        const rate = parseFloat(document.getElementById('deposit-line-pay-rate').value) || 0;
+        const feeContainer = document.getElementById('deposit-line-fee-container');
+        feeContainer.style.display = lineAmount > 0 ? 'flex' : 'none';
+        document.getElementById('deposit-fee-amount').value = lineAmount > 0 ? `扣 $${Math.round(lineAmount * (rate / 100))}` : '';
+    }
+
     function depositClient(index) {
         currentDepositClientIndex = index;
         document.getElementById('deposit-client-name').textContent = clients[index].name;
         document.getElementById('deposit-cash').value = '0';
         document.getElementById('deposit-transfer').value = '0';
         document.getElementById('deposit-line').value = '0';
+        document.getElementById('deposit-line-pay-rate').value = document.getElementById('sale-line-pay-rate').value || '2.13';
+        updateDepositFee();
         document.getElementById('deposit-date')._flatpickr.setDate(new Date());
         openModal('deposit-modal');
     }
@@ -1293,6 +1436,8 @@
         const cash = parseInt(document.getElementById('deposit-cash').value) || 0;
         const transfer = parseInt(document.getElementById('deposit-transfer').value) || 0;
         const line = parseInt(document.getElementById('deposit-line').value) || 0;
+        const paymentFeeRate = parseFloat(document.getElementById('deposit-line-pay-rate').value) || 0;
+        const paymentFee = line > 0 ? Math.round(line * (paymentFeeRate / 100)) : 0;
         const amount = cash + transfer + line;
 
         if (!depositDate) return showCustomAlert('請選擇儲值日期！');
@@ -1343,8 +1488,8 @@
             paidByBalance: 0,
             paidByActual: amount,
             paymentMethod: paymentMethodStr,
-            paymentFeeRate: 0,
-            paymentFee: 0,
+            paymentFeeRate,
+            paymentFee,
             paymentBreakdown: { cash, transfer, line },
             note: amount >= 10000 ? '儲值滿 10000 贈送面膜' : ''
         };
@@ -1361,7 +1506,8 @@
         updateSaleDropdowns();
         syncWithGoogle('update', 'clients', c);
         closeModal('deposit-modal');
-        showCustomAlert(`✨ 儲值成功！\n客戶：${c.name}\n本次儲值：$${amount}\n目前儲值餘額：$${c.balance}${upgradeMsg}\n\n📝 此儲值為預收款，尚未認列當日收入。`);
+        const feeMessage = paymentFee > 0 ? `\nLine Pay 手續費：-$${paymentFee}（${paymentFeeRate}%）` : '';
+        showCustomAlert(`✨ 儲值成功！\n客戶：${c.name}\n本次儲值：$${amount}${feeMessage}\n目前儲值餘額：$${c.balance}${upgradeMsg}\n\n📝 此儲值為預收款，尚未認列當日收入；支付手續費會認列於報表。`);
     }
 
     // --- 支出管理 ---
@@ -1434,7 +1580,11 @@
     
     function renderReport() {
         let totalIncome = 0, totalExpense = 0, totalLineFee = 0;
-        sales.forEach(s => { if(s && s.date && s.date.startsWith(currentReportFilterMonth) && s.type !== 'deposit') { totalIncome += (s.total !== undefined ? s.total : 0); if (s.paymentFee) totalLineFee += s.paymentFee; } });
+        sales.forEach(s => {
+            if (!s || !s.date || !s.date.startsWith(currentReportFilterMonth)) return;
+            if (s.type !== 'deposit') totalIncome += (s.total !== undefined ? s.total : 0);
+            if (s.paymentFee) totalLineFee += s.paymentFee;
+        });
         expenses.forEach(e => { if(e && e.date && e.date.startsWith(currentReportFilterMonth)) totalExpense += e.amount || 0; });
         const [year, month] = currentReportFilterMonth.split('-').map(Number);
         const lastDay = new Date(year, month, 0).getDate();
@@ -1476,7 +1626,7 @@
         filteredSales.forEach(s => {
             const isDeposit = s.type === 'deposit';
             let actual = isDeposit ? 0 : (s.total || 0);
-            let fee = isDeposit ? 0 : (s.paymentFee || 0);
+            let fee = s.paymentFee || 0;
             totalActual += actual; totalFee += fee;
             
             // 把所有銷售紀錄的付款明細（包含儲值類型）都累加到收款方式統計
@@ -2214,6 +2364,7 @@ function saveSale() {
                     if (pb.line && pb.line > 0) parts.push(`Line Pay: $${pb.line}`);
                     const methodLabel = parts.length > 0 ? parts.join(' + ') : (sale.paymentMethod || '');
                     payDetailHtml = `<strong>預收款${methodLabel ? '(' + methodLabel + ')' : ''}</strong>`;
+                    if (sale.paymentFee > 0) payDetailHtml += `<br><small style="color:#e67e22;">Line Pay 手續費: -$${sale.paymentFee} (${sale.paymentFeeRate || 0}%)</small>`;
                 } else {
                     payDetailHtml = `<strong>總計: $${sale.total || 0}</strong>`;
                     if (sale.paidByBalance > 0) payDetailHtml += `<br><small style="color:#8C6B52;">儲值折抵: -$${sale.paidByBalance}</small>`;
@@ -2354,15 +2505,27 @@ function saveSale() {
             currentUser = JSON.parse(savedUser);
             document.getElementById('login-overlay').style.display = 'none'; 
             applyUserPermissions(); 
-            showMotivationQuote();
+            if (navigator.onLine && getOfflineSyncQueue().length === 0) showMotivationQuote();
         }
     });
 
     // --- 網頁載入時，從 GAS 讀取最新資料 ---
     window.onload = async function() {
+        if (!navigator.onLine) {
+            console.info('目前為離線狀態，使用本機資料。');
+            showCustomAlert('📴 離線模式', '目前沒有網路連線。\n您仍可繼續新增及使用本機資料，待網路恢復後，系統會詢問是否將最新紀錄上傳至雲端。');
+            return;
+        }
+
         if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("請在此貼上")) {
             console.warn("尚未設定 GOOGLE_SCRIPT_URL");
             showMotivationQuote();
+            return;
+        }
+
+        // 有離線變更時先保留本機版本，避免雲端舊資料覆蓋尚未上傳的紀錄。
+        if (getOfflineSyncQueue().length > 0) {
+            promptOfflineUploadIfNeeded();
             return;
         }
 
