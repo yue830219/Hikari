@@ -2361,14 +2361,7 @@ function saveSale() {
 
         // 通過防呆，正式執行扣除
         client.balance = (client.balance || 0) - useBalance;
-        if (client.balance <= 0) {
-            client.balance = 0;
-            if (client.isMemberByDeposit) {
-                client.isMember = false;
-                client.isMemberByDeposit = false; // 重置旗標
-                showCustomAlert("⚠️ 溫馨提示：客戶儲值金已歸零，系統已自動移除其儲值升級的會員資格。");
-            }
-        }
+        if (client.balance < 0) client.balance = 0;
 
         client.freeClasses = (client.freeClasses || 0) - totalFreeClassesDeducted; // 💡【新增】正式扣除免費課程
 
@@ -2390,8 +2383,18 @@ function saveSale() {
         else { sales[editingSaleIndex] = saleRecord; syncWithGoogle('update', 'sales', saleRecord); cancelSaleEdit(); }
 
         client.balance = getClientBalanceFromSales(client);
+        let wasDowngradedAfterSale = false;
+        if (client.balance === 0 && (client.isMember || client.isMemberByDeposit)) {
+            client.isMember = false;
+            client.isMemberByDeposit = false;
+            wasDowngradedAfterSale = true;
+        }
         if (editedOriginalClient && editedOriginalClient !== client) {
             editedOriginalClient.balance = getClientBalanceFromSales(editedOriginalClient);
+            if (editedOriginalClient.balance === 0) {
+                editedOriginalClient.isMember = false;
+                editedOriginalClient.isMemberByDeposit = false;
+            }
             syncWithGoogle('update', 'clients', editedOriginalClient);
         }
         syncWithGoogle('update', 'clients', client);
@@ -2410,7 +2413,11 @@ function saveSale() {
         calculateTotal();
         renderClients(); // 💡【新增】更新客戶列表的剩餘程顯示
         
-        if(client.balance > 0 || !currentIsMember) { showCustomAlert('✨ 銷售結帳成功！'); }
+        if (wasDowngradedAfterSale) {
+            showCustomAlert('✨ 銷售結帳成功！客戶儲值金餘額已歸零，系統已自動降級為一般客戶。');
+        } else if (client.balance > 0 || !currentIsMember) {
+            showCustomAlert('✨ 銷售結帳成功！');
+        }
     }
 
     function initFilterMonth() { if (!currentFilterMonth) { const now = new Date(); currentFilterMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'); } }
