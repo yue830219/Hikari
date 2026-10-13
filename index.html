@@ -139,6 +139,7 @@
     .modal-overlay.active { display: flex; }
     body.modal-open { overflow: hidden !important; position: fixed; width: 100%; touch-action: none; }
     .modal-content { background: white; padding: 30px; border-radius: 16px; width: 90%; max-width: 550px; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; }
+    #client-modal .modal-content { width: 95%; max-width: 900px; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #EBE3DB; padding-bottom: 15px; margin-bottom: 20px; }
     .modal-header h3 { margin: 0; padding: 0; border: none; color: #8C6B52; }
     .close-btn { background: none; border: none; font-size: 28px; color: #998675; cursor: pointer; padding: 0; box-shadow: none; line-height: 1; }
@@ -667,6 +668,10 @@
         <div class="detail-row"><label>過敏史</label><div class="detail-data" id="detail-allergy"></div></div>
         <div class="detail-row"><label>肌膚狀況</label><div class="detail-data" id="detail-skin"></div></div>
         <div class="detail-row"><label>生活習慣</label><div class="detail-data" id="detail-lifestyle"></div></div>
+        <div class="detail-row" style="margin-top: 24px;">
+            <label style="font-size: 18px;">📋 所有銷售紀錄 <span id="detail-sales-count" style="font-size: 14px; color: #999;"></span></label>
+            <div id="detail-sales-records" style="margin-top: 10px;"></div>
+        </div>
     </div>
 </div>
 
@@ -1409,6 +1414,26 @@
 
     // --- 客戶多重儲值管理 ---
     let currentDepositClientIndex = -1;
+    function getClientBalanceFromSales(client) {
+        if (!client) return 0;
+        let balance = 0;
+        sales.forEach(sale => {
+            if (!sale) return;
+            const belongsToClient = sale.clientId && client.id
+                ? sale.clientId === client.id
+                : sale.clientName === client.name;
+            if (!belongsToClient) return;
+
+            const depositItemTotal = (sale.items || []).reduce((sum, item) => {
+                return item && item.name === '💰 儲值金儲值' ? sum + (Number(item.price) || 0) : sum;
+            }, 0);
+            const isDeposit = sale.type === 'deposit' || depositItemTotal > 0;
+            if (isDeposit) balance += Number(sale.total) || depositItemTotal;
+            else balance -= Number(sale.paidByBalance) || 0;
+        });
+        return Math.max(balance, 0);
+    }
+
     function updateDepositFee() {
         const lineAmount = parseInt(document.getElementById('deposit-line').value) || 0;
         const rate = parseFloat(document.getElementById('deposit-line-pay-rate').value) || 0;
@@ -1443,7 +1468,7 @@
         if (!depositDate) return showCustomAlert('請選擇儲值日期！');
         if (amount <= 0) return showCustomAlert('請輸入大於0的有效儲值總金額！');
         
-        c.balance = (c.balance || 0) + amount;
+        c.balance = getClientBalanceFromSales(c) + amount;
         let upgradeMsg = "";
         
         if (amount >= 3000 && !c.isMember) {
@@ -1479,6 +1504,7 @@
         const depositSaleRecord = {
             id: generateId('sal'),
             date: depositDate,
+            clientId: c.id,
             clientName: c.name,
             isMember: c.isMember,
             type: 'deposit',
@@ -1499,6 +1525,7 @@
         }
         
         sales.push(depositSaleRecord);
+        c.balance = getClientBalanceFromSales(c);
         syncWithGoogle('insert', 'sales', depositSaleRecord);
         
         saveData();
@@ -1787,7 +1814,9 @@
         if(!name) return showCustomAlert('客戶名稱為必填，請幫忙填寫喔！');
         
         let targetId = editingClientIndex === -1 ? generateId('cli') : clients[editingClientIndex].id || generateId('cli');
-        let newBalance = parseInt(document.getElementById('client-balance').value) || 0; 
+        let newBalance = editingClientIndex !== -1
+            ? getClientBalanceFromSales(clients[editingClientIndex])
+            : (parseInt(document.getElementById('client-balance').value) || 0);
         let newFreeClasses = parseInt(document.getElementById('client-free-classes').value) || 0; // 讀取贈送課程數
 
         const clientData = {
@@ -1840,13 +1869,13 @@
         editingClientIndex = index; 
         const c = clients[index];
 
-        // 只有在點擊修改時，才允許修改這三個欄位
-        document.getElementById('client-balance').disabled = false;
+        // 儲值金餘額由儲值／消費紀錄計算，不在客戶資料表單直接覆寫
+        document.getElementById('client-balance').disabled = true;
         document.getElementById('client-is-member').disabled = false;
         document.getElementById('client-free-classes').disabled = false;
 
         // 【新增】點擊修改時更改標籤名稱
-        document.getElementById('client-balance-label').textContent = '儲值金餘額(此處修改金額不列入款項)';
+        document.getElementById('client-balance-label').textContent = '儲值金餘額（依交易紀錄計算）';
 
         document.getElementById('client-name').value = c.name || '';
         document.getElementById('client-gender').value = c.gender || '未提供'; 
@@ -1856,7 +1885,7 @@
         document.getElementById('client-phone').value = c.phone || ''; 
         document.getElementById('client-address').value = c.address || ''; 
         document.getElementById('client-allergy').value = c.allergy || '';
-        document.getElementById('client-balance').value = c.balance !== undefined ? c.balance : 0; 
+        document.getElementById('client-balance').value = getClientBalanceFromSales(c); 
         document.getElementById('client-free-classes').value = c.freeClasses !== undefined ? c.freeClasses : 0; // 帶入免費課程數
 
         setCheckedValues('client-skin-conditions', c.skinConditions); 
@@ -1884,7 +1913,7 @@
     function renderClients() {
         const tbody = document.getElementById('clients-table-body'); if(!tbody) return; tbody.innerHTML = '';
         clients.forEach((c, index) => { if(c) { 
-            const bal = c.balance !== undefined ? c.balance : 0; 
+            const bal = getClientBalanceFromSales(c); 
             const fClass = c.freeClasses !== undefined ? c.freeClasses : 0; // 取得課程數
             tbody.innerHTML += `<tr data-index="${index}">
                 <td><strong>${c.name || '未命名'}</strong></td>
@@ -1906,8 +1935,58 @@
     }
     function showClientModal(index) {
         const c = clients[index]; if(!c) return;
-        document.getElementById('detail-name').textContent = c.name || '未填寫'; document.getElementById('detail-gender').textContent = c.gender || '未提供'; document.getElementById('detail-member').textContent = c.isMember ? '👑 會員' : '一般客戶'; document.getElementById('detail-balance').textContent = '$' + (c.balance !== undefined ? c.balance : 0); document.getElementById('detail-free-classes').textContent = c.freeClasses !== undefined ? c.freeClasses : 0;
+        document.getElementById('detail-name').textContent = c.name || '未填寫'; document.getElementById('detail-gender').textContent = c.gender || '未提供'; document.getElementById('detail-member').textContent = c.isMember ? '👑 會員' : '一般客戶'; document.getElementById('detail-balance').textContent = '$' + getClientBalanceFromSales(c); document.getElementById('detail-free-classes').textContent = c.freeClasses !== undefined ? c.freeClasses : 0;
         document.getElementById('detail-birthday').textContent = c.birthday || '未填寫'; document.getElementById('detail-occupation').textContent = c.occupation || '未填寫'; document.getElementById('detail-phone').textContent = c.phone || '未填寫'; document.getElementById('detail-address').textContent = c.address || '未填寫'; document.getElementById('detail-allergy').textContent = c.allergy || '無紀錄'; document.getElementById('detail-skin').textContent = (c.skinConditions && c.skinConditions.length > 0) ? c.skinConditions.join('、') : '無紀錄'; document.getElementById('detail-lifestyle').textContent = (c.lifestyle && c.lifestyle.length > 0) ? c.lifestyle.join('、') : '無紀錄';
+
+        const escapeHtml = value => String(value == null ? '' : value).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
+        const clientSales = sales
+            .map((sale, saleIndex) => ({ sale, saleIndex }))
+            .filter(({ sale }) => sale && (sale.clientId && c.id ? sale.clientId === c.id : sale.clientName === c.name))
+            .sort((a, b) => (a.sale.date || '').localeCompare(b.sale.date || '') || a.saleIndex - b.saleIndex);
+        document.getElementById('detail-sales-count').textContent = `（${clientSales.length} 筆）`;
+
+        let runningBalance = 0;
+        const salesHtml = clientSales.length ? `
+            <div>
+                <div style="font-size: 12px; color: #888; margin: 0 0 8px;">餘額依儲值與折抵紀錄由舊至新累計，未記錄的手動調整不會反映。</div>
+                <table style="width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 12px;">
+                    <colgroup>
+                        <col style="width: 14%;"><col style="width: 25%;"><col style="width: 13%;">
+                        <col style="width: 20%;"><col style="width: 13%;"><col style="width: 15%;">
+                    </colgroup>
+                    <thead><tr style="background: #FAF5F0; color: #8C6B52;">
+                        <th style="padding: 6px 4px; text-align: left; overflow-wrap: anywhere;">日期</th>
+                        <th style="padding: 6px 4px; text-align: left; overflow-wrap: anywhere;">類型／內容</th>
+                        <th style="padding: 6px 4px; text-align: right; overflow-wrap: anywhere;">金額</th>
+                        <th style="padding: 6px 4px; text-align: right; overflow-wrap: anywhere;">儲值折抵</th>
+                        <th style="padding: 6px 4px; text-align: right; overflow-wrap: anywhere;">實收</th>
+                        <th style="padding: 6px 4px; text-align: left; overflow-wrap: anywhere;">付款方式</th>
+                    </tr></thead>
+                    <tbody>${clientSales.map(({ sale }) => {
+                        const isDeposit = sale.type === 'deposit' || (sale.items || []).some(item => item && item.name === '💰 儲值金儲值');
+                        const itemsText = (sale.items || []).map(item => `${escapeHtml(item.name || '未指定')} × ${escapeHtml(item.qty || 0)}`).join('<br>') || '-';
+                        const depositItemTotal = (sale.items || []).reduce((sum, item) => item && item.name === '💰 儲值金儲值' ? sum + (Number(item.price) || 0) : sum, 0);
+                        const amount = Number(sale.total) || depositItemTotal;
+                        const balanceUsed = isDeposit ? 0 : (Number(sale.paidByBalance) || 0);
+                        const actualPaid = Number(sale.paidByActual) || (isDeposit ? amount : 0);
+                        runningBalance = Math.max(0, runningBalance + (isDeposit ? amount : -balanceUsed));
+                        return `<tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 7px 4px; overflow-wrap: anywhere;">${escapeHtml(sale.date || '-')}</td>
+                            <td style="padding: 7px 4px; overflow-wrap: anywhere;"><strong>${isDeposit ? '儲值' : '消費'}</strong><br>${itemsText}</td>
+                            <td style="padding: 7px 4px; text-align: right; overflow-wrap: anywhere;">$${amount.toLocaleString()}</td>
+                            <td style="padding: 7px 4px; text-align: right; overflow-wrap: anywhere;">
+                                ${balanceUsed ? '-$' + balanceUsed.toLocaleString() : '-'}
+                                <div style="border-top: 1px dashed #DDCBC0; margin-top: 4px; padding-top: 3px; font-weight: bold; color: ${runningBalance < 0 ? '#e74c3c' : '#8C6B52'};">
+                                    餘額 $${runningBalance.toLocaleString()}
+                                </div>
+                            </td>
+                            <td style="padding: 7px 4px; text-align: right; overflow-wrap: anywhere;">$${actualPaid.toLocaleString()}</td>
+                            <td style="padding: 7px 4px; overflow-wrap: anywhere;">${escapeHtml(sale.paymentMethod || (balanceUsed ? '儲值折抵' : '-'))}</td>
+                        </tr>`;
+                    }).join('')}</tbody>
+                </table>
+            </div>` : '<div class="detail-data" style="text-align: center; color: #999;">目前沒有銷售紀錄</div>';
+        document.getElementById('detail-sales-records').innerHTML = salesHtml;
         openModal('client-modal');
     }
     function toggleClientSort() {
@@ -1996,7 +2075,7 @@
             }
             // ▲ 這是新增的「性別」資料綁定 ▲
 
-            document.getElementById('sale-balance-text').textContent = '$' + (c.balance !== undefined ? c.balance : 0); 
+            document.getElementById('sale-balance-text').textContent = '$' + getClientBalanceFromSales(c); 
             document.getElementById('sale-birthday-text').textContent = c.birthday || '-'; 
             document.getElementById('sale-occupation-text').textContent = c.occupation || '-'; 
             
@@ -2114,8 +2193,8 @@
         let maxOffset = 0;
         if (clientIndex !== "" && clients[clientIndex]) {
             const client = clients[clientIndex];
-            let tempAvailableBalance = client.balance || 0;
-            if (editingSaleIndex !== -1 && sales[editingSaleIndex] && sales[editingSaleIndex].clientName === client.name) tempAvailableBalance += (sales[editingSaleIndex].paidByBalance || 0);
+            let tempAvailableBalance = getClientBalanceFromSales(client);
+            if (editingSaleIndex !== -1 && sales[editingSaleIndex] && (sales[editingSaleIndex].clientId && client.id ? sales[editingSaleIndex].clientId === client.id : sales[editingSaleIndex].clientName === client.name)) tempAvailableBalance += (sales[editingSaleIndex].paidByBalance || 0);
             maxOffset = Math.min(subtotal, tempAvailableBalance);
             maxOffsetDisplay.textContent = '$' + maxOffset;
             useBalanceInput.max = maxOffset;
@@ -2180,6 +2259,7 @@ function saveSale() {
         if(!date || clientIndex === "") return showCustomAlert('請確認日期、手機號碼或選取正確客戶');
         
         const client = clients[clientIndex];
+        client.balance = getClientBalanceFromSales(client);
         const items = []; 
         let isFirstCourse = true;
         let totalFreeClassesDeducted = 0; // 💡【新增】統計本次點選了多少堂贈送課程
@@ -2242,11 +2322,13 @@ function saveSale() {
         const paymentFee = payLine > 0 ? Math.round(payLine * (paymentFeeRate / 100)) : 0;
 
         // 💡【修改】修改歷史紀錄防呆：點選儲存時，先暫時退回「舊紀錄」的儲值金與贈送課程數
+        let editedOriginalClient = null;
         if (editingSaleIndex !== -1) {
             const oldSale = sales[editingSaleIndex];
-            const matchedClient = clients.find(c => c && c.name === oldSale.clientName);
+            const matchedClient = clients.find(c => c && (oldSale.clientId && c.id ? c.id === oldSale.clientId : c.name === oldSale.clientName));
             if (matchedClient) {
-                matchedClient.balance = (matchedClient.balance || 0) + (oldSale.paidByBalance || 0);
+                editedOriginalClient = matchedClient;
+                matchedClient.balance = getClientBalanceFromSales(matchedClient) + (oldSale.paidByBalance || 0);
                 matchedClient.freeClasses = (matchedClient.freeClasses || 0) + (oldSale.freeClassesDeducted || 0); // 💡【新增】暫時退回舊贈送課程
             }
         }
@@ -2255,7 +2337,7 @@ function saveSale() {
         if (useBalance > (client.balance || 0)) {
             if (editingSaleIndex !== -1) {
                 const oldSale = sales[editingSaleIndex];
-                const matchedClient = clients.find(c => c && c.name === oldSale.clientName);
+                const matchedClient = clients.find(c => c && (oldSale.clientId && c.id ? c.id === oldSale.clientId : c.name === oldSale.clientName));
                 if (matchedClient) {
                     matchedClient.balance -= (oldSale.paidByBalance || 0);
                     matchedClient.freeClasses -= (oldSale.freeClassesDeducted || 0); // 💡【新增】防呆失敗，扣回
@@ -2268,7 +2350,7 @@ function saveSale() {
         if (totalFreeClassesDeducted > (client.freeClasses || 0)) {
             if (editingSaleIndex !== -1) {
                 const oldSale = sales[editingSaleIndex];
-                const matchedClient = clients.find(c => c && c.name === oldSale.clientName);
+                const matchedClient = clients.find(c => c && (oldSale.clientId && c.id ? c.id === oldSale.clientId : c.name === oldSale.clientName));
                 if (matchedClient) {
                     matchedClient.balance -= (oldSale.paidByBalance || 0);
                     matchedClient.freeClasses -= (oldSale.freeClassesDeducted || 0); // 💡【新增】防呆失敗，扣回
@@ -2292,7 +2374,7 @@ function saveSale() {
 
         let targetId = editingSaleIndex === -1 ? generateId('sal') : sales[editingSaleIndex].id || generateId('sal');
         const saleRecord = { 
-            id: targetId, date, clientName: client.name, isMember: currentIsMember, items, 
+            id: targetId, date, clientId: client.id, clientName: client.name, isMember: currentIsMember, items, 
             discount, total, paidByBalance: useBalance, paidByActual: actualPay,
             paymentMethod: paymentMethodStr,
             paymentBreakdown: { cash: payCash, transfer: payTransfer, line: payLine },
@@ -2307,6 +2389,11 @@ function saveSale() {
         if (editingSaleIndex === -1) { sales.push(saleRecord); syncWithGoogle('insert', 'sales', saleRecord); } 
         else { sales[editingSaleIndex] = saleRecord; syncWithGoogle('update', 'sales', saleRecord); cancelSaleEdit(); }
 
+        client.balance = getClientBalanceFromSales(client);
+        if (editedOriginalClient && editedOriginalClient !== client) {
+            editedOriginalClient.balance = getClientBalanceFromSales(editedOriginalClient);
+            syncWithGoogle('update', 'clients', editedOriginalClient);
+        }
         syncWithGoogle('update', 'clients', client);
         saveData(); 
         
@@ -2336,7 +2423,24 @@ function saveSale() {
     
     function renderRecords() {
         initFilterMonth(); const tbody = document.getElementById('records-table-body'); if(!tbody) return; tbody.innerHTML = '';
-        const filteredSales = sales.map((sale, index) => ({ ...sale, originalIndex: index })).filter(s => s && s.date && s.date.startsWith(currentFilterMonth)).sort((a, b) => b.date.localeCompare(a.date) || b.originalIndex - a.originalIndex);
+        const balanceAfterSale = new Map();
+        const balancesByClient = new Map();
+        sales.map((entry, index) => ({ entry, index }))
+            .filter(({ entry }) => entry && entry.date)
+            .sort((a, b) => a.entry.date.localeCompare(b.entry.date) || a.index - b.index)
+            .forEach(({ entry, index }) => {
+                const matchedClient = clients.find(client => client && (entry.clientId && client.id ? entry.clientId === client.id : entry.clientName === client.name));
+                const clientKey = matchedClient && matchedClient.id ? `id:${matchedClient.id}` : `name:${entry.clientName || ''}`;
+                const depositItemTotal = (entry.items || []).reduce((sum, item) => item && item.name === '💰 儲值金儲值' ? sum + (Number(item.price) || 0) : sum, 0);
+                const isDeposit = entry.type === 'deposit' || depositItemTotal > 0;
+                const depositAmount = isDeposit ? (Number(entry.total) || depositItemTotal) : 0;
+                const balanceUsed = isDeposit ? 0 : (Number(entry.paidByBalance) || 0);
+                const previousBalance = balancesByClient.get(clientKey) || 0;
+                const updatedBalance = Math.max(0, previousBalance + depositAmount - balanceUsed);
+                balancesByClient.set(clientKey, updatedBalance);
+                balanceAfterSale.set(index, updatedBalance);
+            });
+        const filteredSales = sales.map((sale, index) => ({ ...sale, originalIndex: index })).filter(s => s && s.date && s.date.startsWith(currentFilterMonth)).sort((a, b) => a.date.localeCompare(b.date) || a.originalIndex - b.originalIndex);
         filteredSales.forEach(sale => {
             if(sale && sale.items) { 
                 const courseItems = [], productItems = [];
@@ -2386,6 +2490,8 @@ function saveSale() {
                 }
 
                 const editButtonHtml = isDeposit ? `<button class="btn-warning" style="opacity: 0.6; cursor: not-allowed;" onclick="showCustomAlert('☕ 儲值紀錄無法直接修改。若金額有誤，請點選「刪除」後重新至「客戶管理」中進行儲值。')">修改</button>` : `<button class="btn-warning" onclick="startEditSale(${sale.originalIndex})">修改</button>`;
+                const balanceAfter = balanceAfterSale.get(sale.originalIndex) || 0;
+                payDetailHtml += `<br><strong style="display:inline-block; margin-top:5px; color:#8C6B52;">儲值金餘額：$${balanceAfter.toLocaleString()}</strong>`;
                 tbody.innerHTML += `<tr><td>${sale.date || '-'}</td><td><strong>${sale.clientName || '未知客戶'}</strong><br><small style="color:#999">${sale.isMember ? '會員價' : '一般價'}</small></td><td>${courseItems.length > 0 ? courseItems.join('<br>') : '-'}</td><td>${productItems.length > 0 ? productItems.join('<br>') : '-'}</td><td>$${sale.discount || 0}</td><td>${payDetailHtml}</td><td class="action-cell">${editButtonHtml}<button class="btn-danger" onclick="deleteSale(${sale.originalIndex}, this)">刪除</button></td></tr>`; 
             }
         });
@@ -2459,20 +2565,20 @@ function saveSale() {
         if (!btn.dataset.confirmed) { btn.textContent = "確定"; btn.style.backgroundColor = "#d32f2f"; btn.dataset.confirmed = "true"; setTimeout(() => { if (btn && btn.dataset.confirmed) { btn.textContent = "刪除"; btn.style.backgroundColor = ""; delete btn.dataset.confirmed; } }, 3000); } 
         else { 
             const oldSale = sales[index]; const targetId = oldSale.id;
-            const matchedClient = clients.find(c => c && c.name === oldSale.clientName);
+            const matchedClient = clients.find(c => c && (oldSale.clientId && c.id ? c.id === oldSale.clientId : c.name === oldSale.clientName));
             if (matchedClient) {
                 const isDepositSale = oldSale.items && oldSale.items.some(item => item.name === "💰 儲值金儲值");
-                if (isDepositSale) {
-                    const depositAmount = oldSale.items.reduce((sum, item) => item.name === "💰 儲值金儲值" ? sum + item.price : sum, 0);
-                    matchedClient.balance = Math.max((matchedClient.balance || 0) - depositAmount, 0);
-                } else { 
-                    matchedClient.balance = (matchedClient.balance || 0) + (oldSale.paidByBalance || 0); 
+                if (!isDepositSale) {
                     // 💡【新增】當刪除一般銷售紀錄時，必須歸還當時扣掉的免費課程數
                     matchedClient.freeClasses = (matchedClient.freeClasses || 0) + (oldSale.freeClassesDeducted || 0);
                 }
+            }
+            sales.splice(index, 1);
+            if (matchedClient) {
+                matchedClient.balance = getClientBalanceFromSales(matchedClient);
                 syncWithGoogle('update', 'clients', matchedClient);
             }
-            sales.splice(index, 1); if (targetId) syncWithGoogle('delete', 'sales', { id: targetId }); saveData(); renderMonthButtons(); renderRecords(); renderClients();
+            if (targetId) syncWithGoogle('delete', 'sales', { id: targetId }); saveData(); renderMonthButtons(); renderRecords(); renderClients();
         }
     }
 
