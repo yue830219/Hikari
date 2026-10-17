@@ -110,6 +110,22 @@
     table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(212, 184, 149, 0.15); border: 1px solid #EBE3DB; }
     th, td { padding: 14px 12px; text-align: left; border-bottom: 1px solid #EBE3DB; vertical-align: middle; }
     th { background-color: #EBE3DB; color: #8C6B52; font-weight: 600; font-size: 15px; }
+    #clients-tab table th, #clients-tab table td { text-align: center; }
+    #records-tab table thead th,
+    #records-tab table tbody td:not(:nth-child(3)):not(:nth-child(4)) { text-align: center; }
+    #records-tab table thead th:nth-child(3),
+    #records-tab table thead th:nth-child(4) { text-align: left; }
+    #sale-course-table th:not(:first-child),
+    #sale-course-table td:not(:first-child),
+    #sale-product-table th:not(:first-child),
+    #sale-product-table td:not(:first-child) { text-align: center; }
+    #sale-course-table .item-is-free,
+    #sale-course-table .item-qty,
+    #sale-product-table .item-qty { text-align: center; }
+    #sale-date,
+    #expense-date { text-align: center; }
+    #products-tab table th:not(:nth-child(2)),
+    #products-tab table td:not(:nth-child(2)) { text-align: center; }
     tr:last-child td { border-bottom: none; }
     tr:hover td { background-color: #FFFFFF; }
     .action-cell { 
@@ -210,13 +226,20 @@
         }
         .settings-btn { 
             position: absolute; top: 20px; right: 20px; 
-            background: none; border: none; font-size: 26px; 
-            cursor: pointer; color: #8C6B52; transition: transform 0.3s; 
-            box-shadow: none; padding: 0; line-height: 1;
+            width: 48px; height: 48px; padding: 0;
+            display: flex; justify-content: center; align-items: center;
+            background: transparent; border: none; border-radius: 0;
+            cursor: pointer; color: #8C6B52;
+            transition: color 0.2s ease;
+            box-shadow: none; line-height: 1;
         }
+        .settings-gear-icon { width: 32px; height: 32px; display: block; flex: none; transform: rotate(22.5deg); transform-origin: center; }
         .settings-btn:hover { 
-            transform: rotate(90deg); background: none; box-shadow: none;
+            transform: none; background: transparent; box-shadow: none; color: #A68064;
         }
+        #account-modal .modal-header h3 { display: flex; align-items: center; gap: 8px; }
+        #account-modal #admin-only-section table thead th { text-align: center; }
+        #account-modal #account-table-body td { text-align: center; }
         /* 確保 container 可以容納絕對定位的按鈕 */
         .container { position: relative; }
         
@@ -358,8 +381,23 @@
 
 <div class="container">
     <!-- 右上角齒輪按鈕 -->
-    <button class="settings-btn hide-on-print" onclick="openAccountModal()">⚙️</button>
-    <h1 class="hide-on-print">銷售紀錄管理系統</h1>
+    <button class="settings-btn hide-on-print" onclick="openAccountModal()" aria-label="系統設定" title="系統設定">
+        <svg class="settings-gear-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <g fill="currentColor">
+                <circle cx="12" cy="12" r="7.6" />
+                <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" />
+                <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" transform="rotate(45 12 12)" />
+                <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" transform="rotate(90 12 12)" />
+                <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" transform="rotate(135 12 12)" />
+                <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" transform="rotate(180 12 12)" />
+                <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" transform="rotate(225 12 12)" />
+                <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" transform="rotate(270 12 12)" />
+                <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" transform="rotate(315 12 12)" />
+            </g>
+            <circle cx="12" cy="12" r="3.2" fill="#fff" />
+        </svg>
+    </button>
+    <h1 class="hide-on-print">Hikari Studio</h1>
     <div class="tabs hide-on-print">
         <button class="tab active" onclick="switchTab('sales-tab', this)">銷售輸入</button>
         <button class="tab" onclick="switchTab('records-tab', this)">銷售紀錄</button>
@@ -394,14 +432,14 @@
         
         <div id="sale-items-container" style="margin-bottom: 15px; margin-top: 10px;">
             <h3 style="color: #A68064;">銷售課程</h3>
-            <table>
+            <table id="sale-course-table">
                 <thead><tr><th>課程名稱</th><th style="width: 110px;">贈送課程</th><th style="width: 120px;">單價明細</th><th style="width: 100px;">數量</th><th style="width: 120px;">銷售金額</th><th style="width: 80px; text-align: center;">操作</th></tr></thead>
                 <tbody id="sale-course-items-body"></tbody>
             </table>
             <button onclick="addSaleItemRow('課程')" class="btn-warning" style="margin-top: 10px; margin-bottom: 25px;">+ 新增課程(F2)</button>
 
             <h3 style="color: #A68064;">銷售商品</h3>
-            <table>
+            <table id="sale-product-table">
                 <thead><tr><th>產品名稱</th><th style="width: 120px;">單價明細</th><th style="width: 100px;">數量</th><th style="width: 120px;">銷售金額</th><th style="width: 80px; text-align: center;">操作</th></tr></thead>
                 <tbody id="sale-product-items-body"></tbody>
             </table>
@@ -456,9 +494,9 @@
 
         <!-- 結帳金額顯示區塊 -->
         <div class="form-group" style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 15px; flex-wrap: wrap;">
-            <div class="total-display" style="font-size: 18px; padding: 12px; border-style: dotted; background: #FFFFFF;">應收總計: <span id="sale-total">0</span> 元</div>
+            <div class="total-display" style="font-size: 22px; padding: 12px; border-style: dotted; background: #FFFFFF;">應收總計: <span id="sale-total">0</span> 元</div>
             <!-- 加入 ID 與預設隱藏 display:none -->
-            <div id="remaining-pay-container" class="total-display" style="font-size: 18px; padding: 12px; background: #FFF4E6; border: 1px dashed #E67E22; color: #D35400; display: none;">剩餘應收: <span id="sale-remaining-pay">0</span> 元</div>
+            <div id="remaining-pay-container" class="total-display" style="font-size: 22px; padding: 12px; background: #FFF4E6; border: 1px dashed #E67E22; color: #D35400; display: none;">剩餘應收: <span id="sale-remaining-pay">0</span> 元</div>
             <div class="total-display" style="font-size: 22px; padding: 12px; background: #FAF5F0;">實收金額: <span id="sale-actual-pay">0</span> 元</div>
         </div>
         <button id="sale-submit-btn" onclick="saveSale()">儲存(F4)</button>
@@ -680,7 +718,7 @@
     <div class="modal-content">
         <div class="modal-header"><h3>💰 客戶儲值</h3><button class="close-btn" onclick="closeModal('deposit-modal')">&times;</button></div>
         <div class="form-group"><label style="font-size: 18px;">儲值客戶：<span id="deposit-client-name" style="color: #8C6B52; font-weight: bold;"></span></label></div>
-        <div class="form-group"><label>儲值日期</label><input type="text" id="deposit-date" class="date-picker" placeholder="請選擇日期..." readonly></div>
+        <div class="form-group"><label>儲值日期</label><input type="text" id="deposit-date" class="date-picker" placeholder="請選擇或輸入日期（YYYY-MM-DD）..."></div>
         <div class="flex-row">
             <div><label>💵 現金</label><input type="number" id="deposit-cash" class="no-spinners" value="0" min="0" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value==='') this.value='0';"></div>
             <div><label>🏦 匯款轉帳</label><input type="number" id="deposit-transfer" class="no-spinners" value="0" min="0" onfocus="if(this.value==='0') this.value='';" onblur="if(this.value==='') this.value='0';"></div>
@@ -745,7 +783,23 @@
 <div class="modal-overlay hide-on-print" id="account-modal" onclick="closeModalOnBg(event, 'account-modal')">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>⚙️ 系統設定</h3>
+            <h3>
+                <svg class="settings-gear-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <g fill="currentColor">
+                        <circle cx="12" cy="12" r="7.6" />
+                        <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" />
+                        <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" transform="rotate(45 12 12)" />
+                        <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" transform="rotate(90 12 12)" />
+                        <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" transform="rotate(135 12 12)" />
+                        <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" transform="rotate(180 12 12)" />
+                        <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" transform="rotate(225 12 12)" />
+                        <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" transform="rotate(270 12 12)" />
+                        <rect x="9.8" y="1" width="4.4" height="8.8" rx="1.1" transform="rotate(315 12 12)" />
+                    </g>
+                    <circle cx="12" cy="12" r="3.2" fill="#fff" />
+                </svg>
+                系統設定
+            </h3>
             <button class="close-btn" onclick="closeModal('account-modal')">&times;</button>
         </div>
         
@@ -1329,7 +1383,8 @@
         window.setTimeout(promptOfflineUploadIfNeeded, 500);
     });
 
-    let datePickers = flatpickr(".date-picker", { locale: "zh_tw", dateFormat: "Y-m-d", disableMobile: "true" });
+    let datePickers = flatpickr(".date-picker:not(#deposit-date)", { locale: "zh_tw", dateFormat: "Y-m-d", disableMobile: "true" });
+    flatpickr("#deposit-date", { locale: "zh_tw", dateFormat: "Y-m-d", disableMobile: "true", allowInput: true });
     const syncDateFields = ['sale-date', 'expense-date', 'report-daily-date', 'deposit-date'];
     function syncTransactionDates(sourceId, dateValue) {
         if (!dateValue) return;
@@ -1457,15 +1512,19 @@
     function confirmDeposit() {
         if(currentDepositClientIndex === -1) return;
         const c = clients[currentDepositClientIndex];
-        const depositDate = document.getElementById('deposit-date').value;
+        const depositDatePicker = document.getElementById('deposit-date')._flatpickr;
+        const depositDate = document.getElementById('deposit-date').value.trim();
+        const parsedDepositDate = depositDatePicker.parseDate(depositDate, 'Y-m-d');
         const cash = parseInt(document.getElementById('deposit-cash').value) || 0;
         const transfer = parseInt(document.getElementById('deposit-transfer').value) || 0;
         const line = parseInt(document.getElementById('deposit-line').value) || 0;
-        const paymentFeeRate = parseFloat(document.getElementById('deposit-line-pay-rate').value) || 0;
+        const paymentFeeRate = line > 0 ? (parseFloat(document.getElementById('deposit-line-pay-rate').value) || 0) : 0;
         const paymentFee = line > 0 ? Math.round(line * (paymentFeeRate / 100)) : 0;
         const amount = cash + transfer + line;
 
-        if (!depositDate) return showCustomAlert('請選擇儲值日期！');
+        if (!parsedDepositDate || depositDatePicker.formatDate(parsedDepositDate, 'Y-m-d') !== depositDate) {
+            return showCustomAlert('請輸入有效的儲值日期（YYYY-MM-DD），或從日期選擇器選擇。');
+        }
         if (amount <= 0) return showCustomAlert('請輸入大於0的有效儲值總金額！');
         
         c.balance = getClientBalanceFromSales(c) + amount;
@@ -1646,7 +1705,7 @@
 
     function buildDetailedReport(title, saleFilterFn, expenseFilterFn, prepaidCutoffDate, maskLabel) {
         // --- 1. 處理銷售紀錄 ---
-        let filteredSales = sales.filter(saleFilterFn).sort((a, b) => b.date.localeCompare(a.date));
+        let filteredSales = sales.filter(saleFilterFn).sort((a, b) => a.date.localeCompare(b.date));
         let totalActual = 0, totalCash = 0, totalLinePay = 0, totalRemittance = 0, totalFee = 0;
         let tableRows = '';
 
@@ -1677,7 +1736,7 @@
         });
 
         // --- 2. 處理支出紀錄 ---
-        let filteredExpenses = expenses.filter(expenseFilterFn).sort((a, b) => b.date.localeCompare(a.date));
+        let filteredExpenses = expenses.filter(expenseFilterFn).sort((a, b) => a.date.localeCompare(b.date));
         let totalExpense = 0;
         let expenseTableRows = '';
 
@@ -1959,8 +2018,8 @@
                         <th style="padding: 6px 4px; text-align: left; overflow-wrap: anywhere;">類型／內容</th>
                         <th style="padding: 6px 4px; text-align: right; overflow-wrap: anywhere;">金額</th>
                         <th style="padding: 6px 4px; text-align: right; overflow-wrap: anywhere;">儲值折抵</th>
-                        <th style="padding: 6px 4px; text-align: right; overflow-wrap: anywhere;">實收</th>
-                        <th style="padding: 6px 4px; text-align: left; overflow-wrap: anywhere;">付款方式</th>
+                        <th style="padding: 6px 4px; text-align: center; overflow-wrap: anywhere;">實收</th>
+                        <th style="padding: 6px 4px; text-align: center; overflow-wrap: anywhere;">付款方式</th>
                     </tr></thead>
                     <tbody>${clientSales.map(({ sale }) => {
                         const isDeposit = sale.type === 'deposit' || (sale.items || []).some(item => item && item.name === '💰 儲值金儲值');
@@ -1980,8 +2039,8 @@
                                     餘額 $${runningBalance.toLocaleString()}
                                 </div>
                             </td>
-                            <td style="padding: 7px 4px; text-align: right; overflow-wrap: anywhere;">$${actualPaid.toLocaleString()}</td>
-                            <td style="padding: 7px 4px; overflow-wrap: anywhere;">${escapeHtml(sale.paymentMethod || (balanceUsed ? '儲值折抵' : '-'))}</td>
+                            <td style="padding: 7px 4px; text-align: center; overflow-wrap: anywhere;">$${actualPaid.toLocaleString()}</td>
+                            <td style="padding: 7px 4px; text-align: center; overflow-wrap: anywhere;">${escapeHtml(sale.paymentMethod || (balanceUsed ? '儲值折抵' : '-'))}</td>
                         </tr>`;
                     }).join('')}</tbody>
                 </table>
